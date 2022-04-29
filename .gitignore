@@ -1,6 +1,6 @@
 # Trash ppl
-src/test/solutions
-src/test/testcases
+/src/test/solutions/*
+/src/test/testcases/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -150,3 +150,4 @@ cython_debug/
 
 # Custom
 !__init__.py
+!.gitkeep
