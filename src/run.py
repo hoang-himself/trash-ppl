@@ -10,7 +10,7 @@ for path in [
     sys.path.append(path)
 ANTLR_JAR = os.environ.get('ANTLR_JAR')
 TARGET_DIR = '../target'
-GENERATE_DIR = 'main/d96/parser'
+GENERATE_DIR = '../target'
 
 
 def main(argv):

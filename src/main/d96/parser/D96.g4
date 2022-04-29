@@ -13,33 +13,19 @@ options {
 // Program structures
 
 program
-  : class_decl* entry_class? class_decl* EOF
+  : class_decl+ EOF
   ;
 
 class_decl
   : CLASS ID_NAME (COLON ID_NAME)? LCB class_mem_decl* RCB
   ; // no multiple inheritance
 
-// class_decl
-//   : CLASS ID_NAME (COLON ID_NAME)? LCB class_mem_decl* des_method? class_mem_decl* RCB
-//   ; // no multiple inheritance
-
-entry_class
-  : CLASS 'Program' LCB class_mem_decl* entry_method? class_mem_decl* RCB
-  ;
-
 class_mem_decl
   : attr_decl
-  | method_decl
   | cons_method
   | des_method
+  | method_decl
   ;
-
-// class_mem_decl
-//   : attr_decl
-//   | method_decl
-//   | cons_method
-//   ;
 
 attr_decl
   : (VAL | VAR) (attr_decl_wo_asg | attr_decl_w_asg) SEMICOLON
@@ -48,18 +34,21 @@ attr_decl_wo_asg
   : attr_name_list COLON any_type
   ;
 attr_decl_w_asg
-  : (ID_NAME | STATIC_ID_NAME) attr_decl_rep expr
+  : generic_name attr_decl_rep expr
   ;
 attr_decl_rep
-  : COMMA (ID_NAME | STATIC_ID_NAME) attr_decl_rep expr COMMA
+  : COMMA generic_name attr_decl_rep expr COMMA
   | COLON any_type EQ
   ;
 attr_name_list
-  : (ID_NAME | STATIC_ID_NAME) (COMMA (ID_NAME | STATIC_ID_NAME))*
+  : generic_name (COMMA generic_name)*
   ;
 
 method_decl
-  : (ID_NAME | STATIC_ID_NAME) LP param_list? RP block_stmt
+  : generic_name LP param_list? RP block_stmt
+  ;
+generic_name
+  : ID_NAME | STATIC_ID_NAME
   ;
 
 method_local_decl
@@ -74,19 +63,6 @@ method_local_decl_w_asg
 method_local_decl_rep
   : COMMA ID_NAME method_local_decl_rep expr COMMA
   | COLON any_type EQ
-  ;
-
-entry_method
-  : MAIN LCB stmt_wo_return* RCB
-  ;
-MAIN: 'main' LP RP; // If it's stupid but it works, it's not stupid
-stmt_wo_return
-  : method_local_decl
-  | assign_stmt
-  | break_stmt | continue_stmt
-  | flow_stmt
-  | for_stmt
-  | expr SEMICOLON
   ;
 
 cons_method
@@ -152,20 +128,20 @@ literal
 int_literal
   : DEC_LITERAL
   | HEX_LITERAL
-  | OCTAL_LITERAL
-  | BINARY_LITERAL
+  | OCT_LITERAL
+  | BIN_LITERAL
   ;
-// DEC_LITERAL: SIGN? [0-9] [_0-9]* {self.text = self.text.replace("_", "")}; // Dec
+
 DEC_LITERAL: ('0' | [1-9] [_0-9]*) {self.text = self.text.replace("_", "")}; // Dec
 HEX_LITERAL: '0' X '_'? [0-9A-F] [_0-9A-F]* {self.text = self.text.replace("_", "")}; // Hex
-OCTAL_LITERAL: '0' '_'? [0-7] [_0-7]* {self.text = self.text.replace("_", "")}; // Oct
-BINARY_LITERAL: '0' B '_'? [0-1] [_0-1]* {self.text = self.text.replace("_", "")}; // Bin
+OCT_LITERAL: '0' '_'? [0-7] [_0-7]* {self.text = self.text.replace("_", "")}; // Oct
+BIN_LITERAL: '0' B '_'? [0-1] [_0-1]* {self.text = self.text.replace("_", "")}; // Bin
 
 FLOAT_LITERAL
   : FLOAT_INT_LITERAL FLOAT_DEC_LITERAL {self.text = self.text.replace("_", "")}
   | (FLOAT_INT_LITERAL | FLOAT_DEC_LITERAL) FLOAT_EXP_LITERAL {self.text = self.text.replace("_", "")}
   | FLOAT_INT_LITERAL FLOAT_DEC_LITERAL FLOAT_EXP_LITERAL {self.text = self.text.replace("_", "")}
-  ; // TODO Test '1. .100'
+  ;
 fragment FLOAT_INT_LITERAL: '0' | [1-9] [_0-9]*;
 fragment FLOAT_DEC_LITERAL: DOT ([0-9] [_0-9]*)?;
 fragment FLOAT_EXP_LITERAL: E SIGN? [0-9] [_0-9]*;
@@ -181,6 +157,7 @@ BLOCK_COMMENT: HASHTAG2 .*? HASHTAG2 -> skip;
 
 STATIC_ID_NAME: '$' [_0-9A-Za-z]+;
 ID_NAME: [_A-Za-z] [_0-9A-Za-z]*;
+
 static_idname_list: STATIC_ID_NAME (COMMA STATIC_ID_NAME)*;
 idname_list: ID_NAME (COMMA ID_NAME)*;
 
@@ -189,7 +166,7 @@ fragment SIGN: [+-];
 fragment SUB_STRING: ~[\b\f\r\n\t'"\\] | ESC_SEQ;
 
 array_literal
-  : LP literal_list RP
+  : ARRAY LP literal_list? RP
   ;
 
 // Types and values
@@ -205,7 +182,9 @@ any_type
 
 // Expressions
 
-expr_list: expr (COMMA expr)*;
+expr_list
+  : expr (COMMA expr)*
+  ;
 
 expr
   : expr1 (STR_CONCAT | STR_EQ) expr1
@@ -236,7 +215,7 @@ expr6
   | expr7
   ;
 expr7
-  : expr7 LSB expr RSB
+  : expr8 (LSB expr RSB)+
   | expr8
   ;
 expr8
@@ -254,10 +233,10 @@ expr10
 
 operand
   : LP expr RP
-  | literal
   | ID_NAME
   | SELF
   | NULL
+  | literal
   ;
 
 new_object_expr
@@ -270,26 +249,12 @@ assign_stmt
   : assign_lhs EQ assign_rhs SEMICOLON
   ;
 assign_lhs
-  : assign_lhs_sub_expr
+  : expr7 (DOT ID_NAME | COLON2 STATIC_ID_NAME)?
   ;
 assign_rhs
   : assign_stmt
   | expr
   ;
-assign_lhs_sub_expr_list: assign_lhs_sub_expr (COMMA assign_lhs_sub_expr)*;
-assign_lhs_sub_expr
-  : assign_lhs_sub_expr LSB assign_lhs_sub_expr RSB
-  | assign_lhs_sub_expr1
-  ;
-assign_lhs_sub_expr1
-  : assign_lhs_sub_expr1 DOT ID_NAME (LP assign_lhs_sub_expr_list? RP)?
-  | assign_lhs_sub_expr2
-  ;
-assign_lhs_sub_expr2
-  : assign_lhs_sub_expr2 COLON2 STATIC_ID_NAME (LP assign_lhs_sub_expr_list? RP)?
-  | assign_lhs_sub_expr3
-  ;
-assign_lhs_sub_expr3: ID_NAME;
 
 // Flow
 
@@ -334,18 +299,22 @@ return_stmt
 
 // Block
 
-stmt
+any_stmt
   : block_stmt
   | method_local_decl
   | assign_stmt
   | break_stmt | continue_stmt | return_stmt
   | flow_stmt
   | for_stmt
-  | expr SEMICOLON
+  | call_stmt
+  ;
+
+call_stmt
+  : expr7 (DOT ID_NAME | COLON2 STATIC_ID_NAME) LP expr_list? RP SEMICOLON
   ;
 
 block_stmt
-  : LCB stmt* RCB
+  : LCB any_stmt* RCB
   ;
 
 // Scopes

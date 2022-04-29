@@ -1,3 +1,7 @@
+# Trash ppl
+src/test/solutions
+src/test/testcases
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
