@@ -12,7 +12,7 @@
       "args": [
         "test",
         "LexerSuite"
-      ],
+      ]
     },
     {
       "name": "ANTLR: Test ParserSuite",
