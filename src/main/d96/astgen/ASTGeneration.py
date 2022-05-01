@@ -5,7 +5,7 @@ from functools import reduce
 from itertools import zip_longest
 
 # !!! COMMENT THIS OUT
-# from main.d96.utils.AST import *
+from main.d96.utils.AST import *
 
 
 class ASTGeneration(D96Visitor):

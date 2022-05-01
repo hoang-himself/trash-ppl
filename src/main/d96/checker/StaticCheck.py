@@ -3,7 +3,6 @@
 """
 from AST import *
 from Visitor import *
-from Utils import Utils
 from StaticError import *
 
 
@@ -20,7 +19,7 @@ class Symbol:
         self.value = value
 
 
-class StaticChecker(BaseVisitor, Utils):
+class StaticChecker(BaseVisitor):
 
     global_envi = [
         Symbol("getInt", MType([], IntType())),

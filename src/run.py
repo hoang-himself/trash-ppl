@@ -8,7 +8,9 @@ for path in [
     './main/d96/checker/', './main/d96/codegen/'
 ]:
     sys.path.append(path)
-ANTLR_JAR = os.environ.get('ANTLR_JAR')
+# !!! REPLACE THIS
+# ANTLR_JAR = os.environ.get('ANTLR_JAR')
+ANTLR_JAR = './antlr-4.10.1-complete.jar'
 TARGET_DIR = '../target'
 GENERATE_DIR = '../target'
 

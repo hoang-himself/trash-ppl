@@ -3,7 +3,7 @@ from TestUtils import TestAST
 from AST import *
 
 # !!! COMMENT THIS OUT
-# from main.d96.utils.AST import *
+from main.d96.utils.AST import *
 
 
 class ASTGenSuite(unittest.TestCase):
