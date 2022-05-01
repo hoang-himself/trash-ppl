@@ -14,66 +14,6 @@
         "kind": "build",
         "isDefault": true
       }
-    },
-    {
-      "label": "ANTLR: Test LexerSuite",
-      "type": "shell",
-      "command": "${workspaceFolder}/run.py",
-      "args": [
-        "test",
-        "LexerSuite"
-      ],
-      "group": {
-        "kind": "test"
-      }
-    },
-    {
-      "label": "ANTLR: Test ParserSuite",
-      "type": "shell",
-      "command": "${workspaceFolder}/run.py",
-      "args": [
-        "test",
-        "ParserSuite"
-      ],
-      "group": {
-        "kind": "test"
-      }
-    },
-    {
-      "label": "ANTLR: Test ASTGenSuite",
-      "type": "shell",
-      "command": "${workspaceFolder}/run.py",
-      "args": [
-        "test",
-        "ASTGenSuite"
-      ],
-      "group": {
-        "kind": "test"
-      }
-    },
-    {
-      "label": "ANTLR: Test CheckerSuite",
-      "type": "shell",
-      "command": "${workspaceFolder}/run.py",
-      "args": [
-        "test",
-        "CheckerSuite"
-      ],
-      "group": {
-        "kind": "test"
-      }
-    },
-    {
-      "label": "ANTLR: Test CodeGenSuite",
-      "type": "shell",
-      "command": "${workspaceFolder}/run.py",
-      "args": [
-        "test",
-        "CodeGenSuite"
-      ],
-      "group": {
-        "kind": "test"
-      }
     }
   ]
 }

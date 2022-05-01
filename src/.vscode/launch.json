@@ -5,12 +5,53 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ANTLR: Generate",
+      "name": "ANTLR: Test LexerSuite",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/run.py",
       "args": [
-        "gen"
+        "test",
+        "LexerSuite"
+      ],
+    },
+    {
+      "name": "ANTLR: Test ParserSuite",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "args": [
+        "test",
+        "ParserSuite"
+      ]
+    },
+    {
+      "name": "ANTLR: Test ASTGenSuite",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "args": [
+        "test",
+        "ASTGenSuite"
+      ]
+    },
+    {
+      "name": "ANTLR: Test CheckerSuite",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "args": [
+        "test",
+        "CheckerSuite"
+      ]
+    },
+    {
+      "name": "ANTLR: Test CodeGenSuite",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run.py",
+      "args": [
+        "test",
+        "CodeGenSuite"
       ]
     }
   ]
