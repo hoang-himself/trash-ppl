@@ -419,11 +419,9 @@ class ASTGeneration(D96Visitor):
     def visitReturn_stmt(self, ctx: D96Parser.Return_stmtContext):
         return Return(self.visit(ctx.expr()) if ctx.expr() else None)
 
-    # TODO
     def visitAny_stmt(self, ctx: D96Parser.Any_stmtContext):
         return self.visitChildren(ctx)
 
-    # TODO
     def visitCall_stmt(self, ctx: D96Parser.Call_stmtContext):
         expr_list = self.visit(ctx.expr_list()) if ctx.expr_list() else []
         return CallStmt(
