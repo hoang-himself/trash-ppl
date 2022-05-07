@@ -12,9 +12,10 @@ from main.d96.utils.Utils import *
 from main.d96.utils.Visitor import *
 
 
+# Method type
 class MType:
     def __init__(self, partype, rettype):
-        self.partype = partype
+        self.partype = partype  # This should not exist
         self.rettype = rettype
 
 
@@ -23,6 +24,82 @@ class Symbol:
         self.name = name
         self.mtype = mtype
         self.value = value
+
+
+class MetaAttribute:
+    def __init__(self, name, type, static=False):
+        self.name = name
+        self.type = type
+        self.static = static
+
+
+class MetaMethod:
+    pass
+
+
+class MetaClass:
+    def __init__(self, name, super_cls):
+        self.name = name
+        self.attr = list()
+        self.method = list()
+        if super_cls:
+            self.attr = super_cls.attrs.copy()
+            self.method = super_cls.methods.copy()
+
+    def add_attr(self, name, type):
+        self.check_redeclared_attr(name)
+        self.attr.append(MetaAttribute(name, type))
+
+    def add_method(self, name, partype, rettype=None):
+        self.check_redeclared_method(name, partype)
+        self.method.append(MetaMethod(name, partype, rettype))
+
+    def check_entrypoint(self):
+        return any(map(lambda method: method.name == "main", self.method))
+
+    def check_redeclared_method(self, name, partype):
+        # TODO partype: List[VarDecl]
+        if any(
+            map(
+                lambda method: method.name == name and method.partype ==
+                partype, self.method
+            )
+        ):
+            raise Redeclared(Method(), self.name)
+
+    def check_redeclared_attr(self, name):
+        if any(map(lambda attr: attr.name == name, self.attr)):
+            raise Redeclared(Attribute(), self.name)
+
+
+class MetaClassManager:
+    def __init__(self):
+        self.cls_set = list()
+
+    def add_class(self, name, super_cls=None):
+        self.check_redeclared_class(name)
+        self.check_undeclared_class(super_cls)
+        self.cls_set.append(MetaClass(name, self.cls_set[super_cls]))
+
+    def add_method(self, cls, name, partype, rettype):
+        self.check_undeclared_class(cls)
+        self.cls_set[cls].add_method(name, partype, rettype)
+
+    def add_attr(self, cls, name, type):
+        self.check_undeclared_class(cls)
+        self.cls_set[cls].add_attr(name, type)
+
+    def check_entrypoint(self):
+        if not any([cls.check_entrypoint() for cls in self.cls_set.values()]):
+            raise NoEntryPoint()
+
+    def check_redeclared_class(self, name):
+        if name in self.cls_set:
+            raise Redeclared(Class(), name)
+
+    def check_undeclared_class(self, name):
+        if name not in self.cls_set:
+            raise Undeclared(Class(), name)
 
 
 class StaticChecker(BaseVisitor, Utils):
@@ -39,14 +116,38 @@ class StaticChecker(BaseVisitor, Utils):
         return self.visit(self.ast, StaticChecker.global_envi)
 
     def visitProgram(self, ast, c):
+        # TODO
+        glob_env = c[:]
+
+        # Find Program::main()
+        exists_entrypoint = False
+        for cls in ast.decl:
+            if isinstance(cls, ClassDecl) and cls.classname.name == 'Program':
+                for mem in cls.memlist:
+                    if isinstance(mem, MethodDecl) and mem.name.name == 'main':
+                        exists_entrypoint = True
+                        break
+        if not exists_entrypoint:
+            raise NoEntryPoint()
+
+        # Find redeclare
+        for cls in ast.decl:
+            if isinstance(cls, ClassDecl):
+                glob_env.append(self.visit(cls, glob_env))
+            for mem in cls.memlist:
+                if isinstance(mem, VarDecl) or isinstance(mem, ConstDecl):
+                    glob_env.append(self.visit(mem, glob_env))
+                elif isinstance(mem, MethodDecl):
+                    pass
+
         return [self.visit(x, c) for x in ast.decl]
 
-    def visitClass_decl(self, ast, c):
+    def visitClassDecl(self, ast, c):
         # TODO
         pass
 
     def visitClass_mem_decl(self, ast, c):
-        # TODO
+        # TODO Remove
         pass
 
     def visitAttr_decl(self, ast, c):
@@ -65,7 +166,7 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitAttr_name_list(self, ast, c):
+    def visitAttr_nameList(self, ast, c):
         # TODO
         pass
 
@@ -93,15 +194,15 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitCons_method(self, ast, c):
+    def visitConsMethod(self, ast, c):
         # TODO
         pass
 
-    def visitDes_method(self, ast, c):
+    def visitDesMethod(self, ast, c):
         # TODO
         pass
 
-    def visitParam_list(self, ast, c):
+    def visitParamList(self, ast, c):
         # TODO
         pass
 
@@ -109,7 +210,7 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitLiteral_list(self, ast, c):
+    def visitLiteralList(self, ast, c):
         # TODO
         pass
 
@@ -117,31 +218,29 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitInt_literal(self, ast, c):
+    def visitIntLiteral(self, ast, c):
+        return IntType()
+
+    def visitBooleanLiteral(self, ast, c):
+        return BoolType()
+
+    def visitStaticIdnameList(self, ast, c):
         # TODO
         pass
 
-    def visitBoolean_literal(self, ast, c):
+    def visitIdnameList(self, ast, c):
         # TODO
         pass
 
-    def visitStatic_idname_list(self, ast, c):
+    def visitArrayLiteral(self, ast, c):
         # TODO
         pass
 
-    def visitIdname_list(self, ast, c):
+    def visitAnyType(self, ast, c):
         # TODO
         pass
 
-    def visitArray_literal(self, ast, c):
-        # TODO
-        pass
-
-    def visitAny_type(self, ast, c):
-        # TODO
-        pass
-
-    def visitExpr_list(self, ast, c):
+    def visitExprList(self, ast, c):
         # TODO
         pass
 
@@ -193,86 +292,70 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitNew_object_expr(self, ast, c):
+    def visitNewObjectExpr(self, ast, c):
         # TODO
         pass
 
-    def visitAssign_stmt(self, ast, c):
+    def visitAssignStmt(self, ast, c):
         # TODO
         pass
 
-    def visitAssign_lhs(self, ast, c):
+    def visitAssignLhs(self, ast, c):
         # TODO
         pass
 
-    def visitAssign_rhs(self, ast, c):
+    def visitAssignRhs(self, ast, c):
+        # TODO Remove
+        pass
+
+    def visitFlowStmt(self, ast, c):
         # TODO
         pass
 
-    def visitFlow_stmt(self, ast, c):
+    def visitIfStmt(self, ast, c):
         # TODO
         pass
 
-    def visitIf_stmt(self, ast, c):
+    def visitElseifStmt(self, ast, c):
         # TODO
         pass
 
-    def visitElseif_stmt(self, ast, c):
+    def visitElseStmt(self, ast, c):
         # TODO
         pass
 
-    def visitElse_stmt(self, ast, c):
+    def visitForStmt(self, ast, c):
         # TODO
         pass
 
-    def visitFor_stmt(self, ast, c):
+    def visitForRange(self, ast, c):
         # TODO
         pass
 
-    def visitFor_range(self, ast, c):
+    def visitBreakStmt(self, ast, c):
+        is_in_loop = c[1]
+        if not is_in_loop:
+            raise MustInLoop('Break')
+        return (ast, Break())
+
+    def visitContinueStmt(self, ast, c):
+        is_in_loop = c[1]
+        if not is_in_loop:
+            raise MustInLoop('Continue')
+        return (ast, Continue())
+
+    def visitReturnStmt(self, ast, c):
         # TODO
         pass
 
-    def visitBreak_stmt(self, ast, c):
+    def visitAnyStmt(self, ast, c):
+        # TODO Remove
+        pass
+
+    def visitCallStmt(self, ast, c):
         # TODO
         pass
 
-    def visitContinue_stmt(self, ast, c):
+    def visitBlockStmt(self, ast, c):
         # TODO
         pass
-
-    def visitReturn_stmt(self, ast, c):
-        # TODO
-        pass
-
-    def visitAny_stmt(self, ast, c):
-        # TODO
-        pass
-
-    def visitCall_stmt(self, ast, c):
-        # TODO
-        pass
-
-    def visitBlock_stmt(self, ast, c):
-        # TODO
-        pass
-
-    # def visitFuncDecl(self, ast, c):
-    #     return list(map(lambda x: self.visit(x, (c, True)), ast.body.stmt))
-
-    # def visitCallExpr(self, ast, c):
-    #     at = [self.visit(x, (c[0], False)) for x in ast.param]
-
-    #     res = self.lookup(ast.method.name, c[0], lambda x: x.name)
-    #     if res is None or not type(res.mtype) is MType:
-    #         raise Undeclared(Function(), ast.method.name)
-    #     elif len(res.mtype.partype) != len(at):
-    #         if c[1]:
-    #             raise TypeMismatchInStatement(ast)
-    #         else:
-    #             raise TypeMismatchInExpression(ast)
-    #     else:
-    #         return res.mtype.rettype
-
-    # def visitIntLiteral(self, ast, c):
-    #     return IntType()
