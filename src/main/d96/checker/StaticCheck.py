@@ -1,6 +1,7 @@
 """
  * @author nhphung
 """
+from os import name
 from AST import *
 from Visitor import *
 from Utils import *
@@ -34,19 +35,68 @@ class MetaAttribute:
         self.constant = constant
 
 
+class MetaVariable:
+    def __init__(self, name, type, scope, constant=False):
+        self.name = name
+        self.type = type
+        self.scope = scope
+        self.constant = constant
+
+
 class MetaMethod:
     def __init__(
         self, name, partype: List[VarDecl], rettype=None, static=False
     ):
+        if name == "main":
+            static = True
         self.name = name
         self.partype = partype
         self.rettype = rettype
         self.static = static
+
+        # { str: List[MetaVariable] }
+        # because we must keep track of variables in outer scope
         self.variable = dict()
+
+        # Not in loop
+        self.loop_nest = 0
+
+        # Already in scope of class
+        self.scope_nest = 1
+
+    def enter_loop(self):
+        self.loop_nest += 1
+
+    def exit_loop(self):
+        # TODO maybe add a context param so we can raise MustInLoop here
+        self.loop_nest -= 1
+
+    def enter_scope(self):
+        self.scope_nest += 1
+
+    def exit_scope(self):
+        self.scope_nest -= 1
+        # Remove inner scope variables
+        for name, val in self.variable.items():
+            # TODO this feels wrong
+            if val[-1].scope_nest > self.scope_nest:
+                self.variable[name].pop()
+
+    def add_var(self, name, type):
+        self.check_redeclared_variable(name)
+        self.variable[name] = MetaVariable(name, type, self.scope_nest)
+
+    def add_const(self, name, type):
+        self.check_redeclared_variable(name)
+        self.variable[name] = MetaVariable(name, type, self.scope_nest, True)
+
+    def check_redeclared_variable(self, name):
+        if name in self.variable.keys():
+            raise Redeclared(Variable(), name)
 
 
 class MetaClass:
-    def __init__(self, name, super_cls):
+    def __init__(self, name, super_cls=None):
         self.name = name
         self.attr = dict()
         self.method = dict()
@@ -75,7 +125,11 @@ class MetaClass:
     def check_entrypoint(self):
         return any(map(lambda method: method.name == "main", self.method))
 
-    def check_redeclared_method(self, name, partype):
+    def check_redeclared_attr(self, name):
+        if any(map(lambda attr: attr.name == name, self.attr)):
+            raise Redeclared(Attribute(), name)
+
+    def check_redeclared_method(self, name, partype: List[VarDecl]):
         # TODO partype: List[VarDecl]
         if any(
             map(
@@ -85,10 +139,6 @@ class MetaClass:
         ):
             raise Redeclared(Method(), self.name)
 
-    def check_redeclared_attr(self, name):
-        if any(map(lambda attr: attr.name == name, self.attr)):
-            raise Redeclared(Attribute(), self.name)
-
 
 class MetaProgram:
     def __init__(self):
@@ -97,7 +147,9 @@ class MetaProgram:
     def add_class(self, name, super_cls=None):
         self.check_redeclared_class(name)
         self.check_undeclared_class(super_cls)
-        self.cls[name] = MetaClass(name, self.cls[super_cls])
+        self.cls[name] = MetaClass(
+            name, self.cls[super_cls] if super_cls else None
+        )
 
     def add_method(self, cls, name, partype, rettype, static=False):
         self.check_undeclared_class(cls)
@@ -107,10 +159,13 @@ class MetaProgram:
         self.check_undeclared_class(cls)
         self.cls[cls].add_attr(name, type, static, constant)
 
-    def get_or_raise_undeclared_class(self, name):
-        if name not in self.cls.keys():
-            raise Undeclared(Class(), name)
+    def get_class(self, name):
+        self.check_undeclared_class(name)
         return self.cls[name]
+
+    def check_undeclared_class(self, name):
+        if name and name not in self.cls.keys():
+            raise Undeclared(ClassType(name), name)
 
     def check_entrypoint(self):
         if not any([cls.check_entrypoint() for cls in self.cls.values()]):
@@ -118,7 +173,7 @@ class MetaProgram:
 
     def check_redeclared_class(self, name):
         if name in self.cls.keys():
-            raise Redeclared(Class(), name)
+            raise Redeclared(ClassType(name), name)
 
 
 class StaticChecker(BaseVisitor, Utils):
@@ -126,20 +181,30 @@ class StaticChecker(BaseVisitor, Utils):
         self.ast = ast
 
     def check(self):
-        return self.visit(self.ast, StaticChecker.global_envi)
+        # Used to be global_envi here, but no idea how it is used
+        return self.visit(self.ast, None)
 
     def visitProgram(self, ast, c):
         # Dependency rejection
         self.meta_program = MetaProgram()
+
         # Traverse all classes
         [self.visit(x, c) for x in ast.decl]
-        # idk you tell me
+
         if not self.meta_program.check_entrypoint():
             raise NoEntryPoint()
 
     def visitClassDecl(self, ast, c):
-        # TODO
-        pass
+        # Load class into meta_program
+        self.meta_program.add_class(
+            ast.classname.name, ast.parentname.name if ast.parentname else None
+        )
+
+        # Traverse all attributes and methods
+        [
+            self.visit(x, self.meta_program.get_class(ast.classname.name))
+            for x in ast.memlist
+        ]
 
     def visitClass_mem_decl(self, ast, c):
         # TODO Remove
@@ -165,7 +230,7 @@ class StaticChecker(BaseVisitor, Utils):
         # TODO
         pass
 
-    def visitMethod_decl(self, ast, c):
+    def visitMethodDecl(self, ast, c):
         # TODO
         pass
 
