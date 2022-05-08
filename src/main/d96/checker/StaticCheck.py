@@ -27,32 +27,50 @@ class Symbol:
 
 
 class MetaAttribute:
-    def __init__(self, name, type, static=False):
+    def __init__(self, name, type, static=False, constant=False):
         self.name = name
         self.type = type
         self.static = static
+        self.constant = constant
 
 
 class MetaMethod:
-    pass
+    def __init__(
+        self, name, partype: List[VarDecl], rettype=None, static=False
+    ):
+        self.name = name
+        self.partype = partype
+        self.rettype = rettype
+        self.static = static
+        self.variable = dict()
 
 
 class MetaClass:
     def __init__(self, name, super_cls):
         self.name = name
-        self.attr = list()
-        self.method = list()
+        self.attr = dict()
+        self.method = dict()
         if super_cls:
             self.attr = super_cls.attrs.copy()
             self.method = super_cls.methods.copy()
 
     def add_attr(self, name, type):
         self.check_redeclared_attr(name)
-        self.attr.append(MetaAttribute(name, type))
+        self.attr[name] = MetaAttribute(name, type)
+
+    def get_attr(self, name):
+        if name not in self.attr.keys():
+            raise Undeclared(Attribute(), name)
+        return self.attr[name]
 
     def add_method(self, name, partype, rettype=None):
         self.check_redeclared_method(name, partype)
-        self.method.append(MetaMethod(name, partype, rettype))
+        self.method[name] = MetaMethod(name, partype, rettype)
+
+    def get_method(self, name):
+        if name not in self.method.keys():
+            raise Undeclared(Method(), name)
+        return self.method[name]
 
     def check_entrypoint(self):
         return any(map(lambda method: method.name == "main", self.method))
@@ -72,43 +90,43 @@ class MetaClass:
             raise Redeclared(Attribute(), self.name)
 
 
-class MetaClassManager:
+class MetaProgram:
     def __init__(self):
-        self.cls_set = list()
+        self.cls = dict()
 
     def add_class(self, name, super_cls=None):
         self.check_redeclared_class(name)
         self.check_undeclared_class(super_cls)
-        self.cls_set.append(MetaClass(name, self.cls_set[super_cls]))
+        self.cls[name] = MetaClass(name, self.cls[super_cls])
 
-    def add_method(self, cls, name, partype, rettype):
+    # Might not need this
+    def add_method(self, cls, name, partype, rettype, static=False):
         self.check_undeclared_class(cls)
-        self.cls_set[cls].add_method(name, partype, rettype)
+        self.cls[cls].add_method(name, partype, rettype, static)
 
+    # Might not need this
     def add_attr(self, cls, name, type):
         self.check_undeclared_class(cls)
-        self.cls_set[cls].add_attr(name, type)
+        self.cls[cls].add_attr(name, type)
+
+    def get_class(self, name):
+        self.check_undeclared_class(name)
+        return self.cls[name]
 
     def check_entrypoint(self):
-        if not any([cls.check_entrypoint() for cls in self.cls_set.values()]):
+        if not any([cls.check_entrypoint() for cls in self.cls.values()]):
             raise NoEntryPoint()
 
     def check_redeclared_class(self, name):
-        if name in self.cls_set:
+        if name in self.cls.keys():
             raise Redeclared(Class(), name)
 
     def check_undeclared_class(self, name):
-        if name not in self.cls_set:
+        if name not in self.cls.keys():
             raise Undeclared(Class(), name)
 
 
 class StaticChecker(BaseVisitor, Utils):
-
-    global_envi = [
-        Symbol("getInt", MType([], IntType())),
-        Symbol("putIntLn", MType([IntType()], VoidType()))
-    ]
-
     def __init__(self, ast):
         self.ast = ast
 
@@ -116,31 +134,13 @@ class StaticChecker(BaseVisitor, Utils):
         return self.visit(self.ast, StaticChecker.global_envi)
 
     def visitProgram(self, ast, c):
-        # TODO
-        glob_env = c[:]
-
-        # Find Program::main()
-        exists_entrypoint = False
-        for cls in ast.decl:
-            if isinstance(cls, ClassDecl) and cls.classname.name == 'Program':
-                for mem in cls.memlist:
-                    if isinstance(mem, MethodDecl) and mem.name.name == 'main':
-                        exists_entrypoint = True
-                        break
-        if not exists_entrypoint:
+        # Dependency rejection
+        self.meta_program = MetaProgram()
+        # Traverse all classes
+        [self.visit(x, c) for x in ast.decl]
+        # idk you tell me
+        if not self.meta_program.check_entrypoint():
             raise NoEntryPoint()
-
-        # Find redeclare
-        for cls in ast.decl:
-            if isinstance(cls, ClassDecl):
-                glob_env.append(self.visit(cls, glob_env))
-            for mem in cls.memlist:
-                if isinstance(mem, VarDecl) or isinstance(mem, ConstDecl):
-                    glob_env.append(self.visit(mem, glob_env))
-                elif isinstance(mem, MethodDecl):
-                    pass
-
-        return [self.visit(x, c) for x in ast.decl]
 
     def visitClassDecl(self, ast, c):
         # TODO
