@@ -54,20 +54,20 @@ class MetaClass:
             self.attr = super_cls.attrs.copy()
             self.method = super_cls.methods.copy()
 
-    def add_attr(self, name, type):
+    def add_attr(self, name, type, static=False, constant=False):
         self.check_redeclared_attr(name)
-        self.attr[name] = MetaAttribute(name, type)
-
-    def get_attr(self, name):
-        if name not in self.attr.keys():
-            raise Undeclared(Attribute(), name)
-        return self.attr[name]
+        self.attr[name] = MetaAttribute(name, type, static, constant)
 
     def add_method(self, name, partype, rettype=None):
         self.check_redeclared_method(name, partype)
         self.method[name] = MetaMethod(name, partype, rettype)
 
-    def get_method(self, name):
+    def get_or_raise_undeclared_attr(self, name):
+        if name not in self.attr.keys():
+            raise Undeclared(Attribute(), name)
+        return self.attr[name]
+
+    def get_or_raise_undeclared_method(self, name):
         if name not in self.method.keys():
             raise Undeclared(Method(), name)
         return self.method[name]
@@ -99,18 +99,17 @@ class MetaProgram:
         self.check_undeclared_class(super_cls)
         self.cls[name] = MetaClass(name, self.cls[super_cls])
 
-    # Might not need this
     def add_method(self, cls, name, partype, rettype, static=False):
         self.check_undeclared_class(cls)
         self.cls[cls].add_method(name, partype, rettype, static)
 
-    # Might not need this
-    def add_attr(self, cls, name, type):
+    def add_attr(self, cls, name, type, static=False, constant=False):
         self.check_undeclared_class(cls)
-        self.cls[cls].add_attr(name, type)
+        self.cls[cls].add_attr(name, type, static, constant)
 
-    def get_class(self, name):
-        self.check_undeclared_class(name)
+    def get_or_raise_undeclared_class(self, name):
+        if name not in self.cls.keys():
+            raise Undeclared(Class(), name)
         return self.cls[name]
 
     def check_entrypoint(self):
@@ -120,10 +119,6 @@ class MetaProgram:
     def check_redeclared_class(self, name):
         if name in self.cls.keys():
             raise Redeclared(Class(), name)
-
-    def check_undeclared_class(self, name):
-        if name not in self.cls.keys():
-            raise Undeclared(Class(), name)
 
 
 class StaticChecker(BaseVisitor, Utils):
