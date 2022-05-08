@@ -30,22 +30,11 @@ class CheckerSuite(unittest.TestCase):
         input = """
         Class Program {
             main() {}
-            myVar: String = "Hello World";
-            myVar: Int;
+            ## myVar: String = "Hello World"; ##
+            ## myVar: Int; ##
         }"""
         expect = """Redeclared Attribute: myVar"""
         self.assertTrue(TestChecker.test(input, expect, 1))
-
-    def sample(self):
-        input = """
-        Class Program {
-            Var heh: Int = 0;
-            main() {
-                Out.printInt(Shape::$numOfShape);
-            }
-        }"""
-        expect = """[None]"""
-        self.assertTrue(TestChecker.test(input, expect, 2))
 
     # def test_undeclared_function(self):
     #     """Simple program: int main() {} """
