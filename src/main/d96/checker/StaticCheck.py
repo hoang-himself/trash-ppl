@@ -281,26 +281,21 @@ class StaticChecker(BaseVisitor):
             raise Undeclared(Identifier(), ast.name)
         return meta_method.variable[ast.name]
 
-
     def visitIf(self, ast, c):
         pass
 
     def visitFor(self, ast, c):
         pass
 
-    def visitBreakStmt(self, ast, c):
-        pass
-        is_in_loop = c[1]
-        if not is_in_loop:
-            raise MustInLoop('Break')
-        return (ast, Break())
+    def visitBreak(self, ast, c):
+        meta_class, meta_method = c
+        if meta_method.loop < 1:
+            raise MustInLoop(Break())
 
-    def visitContinueStmt(self, ast, c):
-        pass
-        is_in_loop = c[1]
-        if not is_in_loop:
-            raise MustInLoop('Continue')
-        return (ast, Continue())
+    def visitContinue(self, ast, c):
+        meta_class, meta_method = c
+        if meta_method.loop < 1:
+            raise MustInLoop(Continue())
 
     def visitReturn(self, ast, c):
         pass
