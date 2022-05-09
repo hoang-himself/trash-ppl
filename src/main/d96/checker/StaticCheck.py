@@ -262,7 +262,11 @@ class StaticChecker(BaseVisitor):
             raise TypeMismatchInStatement(ast)
 
     def visitAssign(self, ast, c):
-        pass
+        lhs = self.visit(ast.lhs, c)
+        rhs = self.visit(ast.exp, c)
+
+        if not lhs:
+            raise Undeclared(Identifier(), ast.lhs.name)
 
     def visitIf(self, ast, c):
         pass
