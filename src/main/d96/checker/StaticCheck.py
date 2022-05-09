@@ -3,13 +3,11 @@
 """
 from AST import *
 from Visitor import *
-from Utils import *
 from StaticError import *
 
 # !!! COMMENT THIS OUT
-from main.d96.utils.AST import *
-from main.d96.utils.Utils import *
-from main.d96.utils.Visitor import *
+# from main.d96.utils.AST import *
+# from main.d96.utils.Visitor import *
 
 
 class MType:
@@ -182,9 +180,15 @@ class MetaProgram:
             raise Undeclared(Class(), name)
 
 
-class StaticChecker(BaseVisitor, Utils):
+class StaticChecker(BaseVisitor):
     def __init__(self, ast):
         self.ast = ast
+
+    def lookup(self, name, lst, func):
+        for x in lst:
+            if name == func(x):
+                return x
+        return None
 
     def check(self):
         return self.visit(self.ast, None)
