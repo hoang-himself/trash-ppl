@@ -327,7 +327,20 @@ class StaticChecker(BaseVisitor):
             pass
 
     def visitUnaryOp(self, ast, c: UnaryOp):
-        pass
+        body = ast.body
+        op = ast.op
+
+        # Arithmetic
+        if op == '-':
+            if type(body) not in [IntLiteral, FloatLiteral]:
+                raise TypeMismatchInExpression(ast)
+            return IntType() if type(body) is IntLiteral else FloatType()
+
+        # Boolean
+        if op == '!':
+            if type(body) is not BooleanLiteral:
+                raise TypeMismatchInExpression(ast)
+            return BoolType()
 
     def visitIntLiteral(self, ast, c):
         return IntType()
