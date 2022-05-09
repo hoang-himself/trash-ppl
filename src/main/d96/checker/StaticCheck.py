@@ -89,8 +89,8 @@ class MetaClass:
         self.attr = dict()
         self.method = dict()
         if super_cls:
-            self.attr = super_cls.attrs.copy()
-            self.method = super_cls.methods.copy()
+            self.attr = super_cls.attr.copy()
+            self.method = super_cls.method.copy()
 
     def add_attr(self, name, type, static=False, constant=False):
         self.check_redeclared_attr(name)
