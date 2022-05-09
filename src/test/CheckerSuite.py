@@ -46,6 +46,41 @@ class CheckerSuite(unittest.TestCase):
         expect = """Undeclared Identifier: myVar"""
         self.assertTrue(TestChecker.test(input, expect, 2))
 
+    def test_bkel_3(self):
+        input = Program(
+            [
+                ClassDecl(
+                    Id("Program"), [
+                        MethodDecl(
+                            Static(), Id("main"), [],
+                            Block(
+                                [
+                                    ConstDecl(
+                                        Id("myVar"), IntType(), IntLiteral(5)
+                                    ),
+                                    Assign(Id("myVar"), IntLiteral(10))
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+        expect = """Cannot Assign To Constant: AssignStmt(Id(myVar),IntLit(10))"""
+        self.assertTrue(TestChecker.test(input, expect, 3))
+
+    def test_bkel_4(self):
+        input = Program(
+            [
+                ClassDecl(
+                    Id("Program"),
+                    [MethodDecl(Static(), Id("main"), [], Block([Break()]))]
+                )
+            ]
+        )
+        expect = """Break Not In Loop"""
+        self.assertTrue(TestChecker.test(input, expect, 4))
+
     # def test_undeclared_function(self):
     #     """Simple program: int main() {} """
     #     input = """int main() {foo();}"""
