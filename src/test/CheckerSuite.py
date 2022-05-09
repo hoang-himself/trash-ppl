@@ -81,6 +81,29 @@ class CheckerSuite(unittest.TestCase):
         expect = """Break Not In Loop"""
         self.assertTrue(TestChecker.test(input, expect, 4))
 
+    def test_bkel_5(self):
+        input = Program(
+            [
+                ClassDecl(
+                    Id("Program"), [
+                        MethodDecl(
+                            Static(), Id("main"), [],
+                            Block(
+                                [
+                                    ConstDecl(
+                                        Id("myVar"), IntType(),
+                                        FloatLiteral(1.2)
+                                    )
+                                ]
+                            )
+                        )
+                    ]
+                )
+            ]
+        )
+        expect = """Type Mismatch In Constant Declaration: ConstDecl(Id(myVar),IntType,FloatLit(1.2))"""
+        self.assertTrue(TestChecker.test(input, expect, 5))
+
     # def test_undeclared_function(self):
     #     """Simple program: int main() {} """
     #     input = """int main() {foo();}"""
