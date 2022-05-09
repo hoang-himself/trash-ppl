@@ -29,9 +29,9 @@ class CheckerSuite(unittest.TestCase):
         # )
         input = """
         Class Program {
-            Val myVar: Int;
             main() {
-                ## Var myVar: Int; ##
+                Var myVar: Int;
+                Val myConst: Int = 69;
             }
             ## myVar: String = "Hello World"; ##
         }"""

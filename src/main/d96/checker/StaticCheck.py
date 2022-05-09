@@ -1,7 +1,6 @@
 """
  * @author nhphung
 """
-from os import name
 from AST import *
 from Visitor import *
 from Utils import *
@@ -58,36 +57,40 @@ class MetaMethod:
         self.variable = dict()
 
         # Not in loop
-        self.loop_nest = 0
+        self.loop = 0
 
         # Already in scope of class
-        self.scope_nest = 1
+        self.scope = 1
 
     def enter_loop(self):
-        self.loop_nest += 1
+        self.loop += 1
 
     def exit_loop(self):
-        # TODO maybe add a context param so we can raise MustInLoop here
-        self.loop_nest -= 1
+        self.loop -= 1
 
     def enter_scope(self):
-        self.scope_nest += 1
+        self.scope += 1
 
     def exit_scope(self):
-        self.scope_nest -= 1
+        self.scope -= 1
         # Remove inner scope variables
         for name, val in self.variable.items():
-            # TODO this feels wrong
-            if val[-1].scope_nest > self.scope_nest:
+            if val[-1].scope > self.scope:
                 self.variable[name].pop()
 
     def add_var(self, name, type):
         self.check_redeclared_variable(name)
-        self.variable[name] = MetaVariable(name, type, self.scope_nest)
+        if name in self.variable.keys():
+            self.variable[name] += [MetaVariable(name, type, self.scope)]
+        else:
+            self.variable[name] = [MetaVariable(name, type, self.scope)]
 
     def add_const(self, name, type):
         self.check_redeclared_variable(name)
-        self.variable[name] = MetaVariable(name, type, self.scope_nest, True)
+        if name in self.variable.keys():
+            self.variable[name] += [MetaVariable(name, type, self.scope, True)]
+        else:
+            self.variable[name] = [MetaVariable(name, type, self.scope, True)]
 
     def check_entrypoint(self):
         return self.name == "main" and self.static
@@ -236,11 +239,23 @@ class StaticChecker(BaseVisitor, Utils):
         [self.visit(x, c) for x in ast.inst]
         meta_method.exit_scope()
 
-    def visitVarDecl(self, ast, c):
-        pass
+    def visitVarDecl(self, ast, c: tuple):
+        meta_class, meta_method = c
+        meta_method.add_var(ast.variable.name, ast.varType)
+        # Var can exist without being initialized
+        if ast.varInit:
+            rettype = self.visit(ast.varInit, c)
+            if rettype != ast.varType:
+                raise TypeMismatchInStatement(ast)
 
-    def visitConstDecl(self, ast, c):
-        pass
+    def visitConstDecl(self, ast, c: tuple):
+        meta_class, meta_method = c
+        meta_method.add_const(ast.constant.name, ast.constType)
+        if not ast.value:
+            raise IllegalConstantExpression(ast.value)
+        rettype = self.visit(ast.value, c)
+        if rettype != ast.constType:
+            raise TypeMismatchInStatement(ast)
 
     def visitAssign(self, ast, c):
         pass
@@ -267,3 +282,6 @@ class StaticChecker(BaseVisitor, Utils):
 
     def visitReturn(self, ast, c):
         pass
+
+    def visitIntLiteral(self, ast, c):
+        return IntType()
