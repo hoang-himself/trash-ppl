@@ -8,33 +8,25 @@ from main.d96.utils.AST import *
 
 class CheckerSuite(unittest.TestCase):
     def test_bkel(self):
-        # input = Program(
-        #     [
-        #         ClassDecl(
-        #             Id(Program), [
-        #                 MethodDecl(Static(), Id("main"), [], Block([])),
-        #                 AttributeDecl(
-        #                     Instance(),
-        #                     VarDecl(
-        #                         Id("myVar"), StringType(),
-        #                         StringLiteral("Hello World")
-        #                     )
-        #                 ),
-        #                 AttributeDecl(
-        #                     Instance(), VarDecl(Id("myVar"), IntType())
-        #                 )
-        #             ]
-        #         )
-        #     ]
-        # )
-        input = """
-        Class Program {
-            main() {
-                Var myVar: Int;
-                Val myConst: Int = 69;
-            }
-            ## myVar: String = "Hello World"; ##
-        }"""
+        input = Program(
+            [
+                ClassDecl(
+                    Id("Program"), [
+                        MethodDecl(Static(), Id("main"), [], Block([])),
+                        AttributeDecl(
+                            Instance(),
+                            VarDecl(
+                                Id("myVar"), StringType(),
+                                StringLiteral("Hello World")
+                            )
+                        ),
+                        AttributeDecl(
+                            Instance(), VarDecl(Id("myVar"), IntType())
+                        )
+                    ]
+                )
+            ]
+        )
         expect = """Redeclared Attribute: myVar"""
         self.assertTrue(TestChecker.test(input, expect, 1))
 
