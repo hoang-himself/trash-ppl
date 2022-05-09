@@ -268,6 +268,20 @@ class StaticChecker(BaseVisitor):
         if not lhs:
             raise Undeclared(Identifier(), ast.lhs.name)
 
+        lhs = lhs[-1]
+        if lhs.constant:
+            raise CannotAssignToConstant(ast)
+
+        # TODO Cannot mismatch type
+
+    # LHS of Assign
+    def visitId(self, ast, c: tuple):
+        meta_class, meta_method = c
+        if ast.name not in meta_method.variable.keys():
+            raise Undeclared(Identifier(), ast.name)
+        return meta_method.variable[ast.name]
+
+
     def visitIf(self, ast, c):
         pass
 
