@@ -10,19 +10,6 @@ from main.d96.utils.AST import *
 from main.d96.utils.Visitor import *
 
 
-class MType:
-    def __init__(self, partype, rettype):
-        self.partype = partype  # This should not exist
-        self.rettype = rettype
-
-
-class Symbol:
-    def __init__(self, name, mtype, value=None):
-        self.name = name
-        self.mtype = mtype
-        self.value = value
-
-
 class MetaAttribute:
     def __init__(self, name, type, static=False, constant=False):
         self.name = name
