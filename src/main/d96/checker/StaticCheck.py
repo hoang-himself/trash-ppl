@@ -123,9 +123,12 @@ class MetaClass:
             raise Redeclared(Attribute(), name)
 
     def check_redeclared_method(self, name, partype: List[VarDecl]):
-        # TODO Test this partype comparison
-        if name in self.method.keys() and self.method[name].partype == partype:
-            raise Redeclared(Method(), name)
+        if name in self.method.keys():
+            # Test with type of parameters, not names
+            partype_old = list(map(lambda x: type(x.varType), self.method[name].partype))
+            partype_new = list(map(lambda x: type(x.varType), partype))
+            if partype_old == partype_new:
+                raise Redeclared(Method(), name)
 
 
 class MetaProgram:
