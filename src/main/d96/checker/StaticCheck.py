@@ -125,7 +125,9 @@ class MetaClass:
     def check_redeclared_method(self, name, partype: List[VarDecl]):
         if name in self.method.keys():
             # Test with type of parameters, not names
-            partype_old = list(map(lambda x: type(x.varType), self.method[name].partype))
+            partype_old = list(
+                map(lambda x: type(x.varType), self.method[name].partype)
+            )
             partype_new = list(map(lambda x: type(x.varType), partype))
             if partype_old == partype_new:
                 raise Redeclared(Method(), name)
@@ -275,6 +277,17 @@ class StaticChecker(BaseVisitor):
         # TODO why obj?
         rettype = self.visit(ast.obj, c)
 
+    def visitIf(self, ast, c: tuple):
+        condition = self.visit(ast.expr, c)
+        # TODO concatenate condition
+        if type(condition) != BoolType:
+            raise TypeMismatchInStatement(ast)
+        self.visit(ast.thenStmt, c)
+        self.visit(ast.elseStmt, c)
+
+    def visitFor(self, ast, c):
+        pass
+
     def visitBreak(self, ast, c):
         meta_class, meta_method = c
         if meta_method.loop < 1:
@@ -288,12 +301,6 @@ class StaticChecker(BaseVisitor):
     def visitReturn(self, ast, c):
         meta_class, meta_method = c
         meta_method.rettype = self.visit(ast.expr, c)
-
-    def visitIf(self, ast, c):
-        pass
-
-    def visitFor(self, ast, c):
-        pass
 
     def visitBinaryOp(self, ast, c: BinaryOp):
         left = ast.left
@@ -350,3 +357,6 @@ class StaticChecker(BaseVisitor):
 
     def visitFloatLiteral(self, ast, c):
         return FloatType()
+
+    def visitBooleanLiteral(self, ast, c):
+        return BoolType()
