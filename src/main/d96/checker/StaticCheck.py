@@ -30,8 +30,6 @@ class MetaMethod:
     def __init__(
         self, name, partype: List[VarDecl], rettype=None, static=False
     ):
-        if name == "main":
-            static = True
         self.name = name
         self.partype = partype
         self.rettype = rettype
@@ -100,6 +98,8 @@ class MetaClass:
 
     def add_method(self, name, partype, rettype=None, static=False):
         self.check_redeclared_method(name, partype)
+        if self.name == "Program" and name == "main":
+            static = True
         self.method[name] = MetaMethod(name, partype, rettype, static)
 
     def get_or_raise_undeclared_attr(self, name):
