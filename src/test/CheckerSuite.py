@@ -7,7 +7,7 @@ from main.d96.utils.AST import *
 
 
 class CheckerSuite(unittest.TestCase):
-    def test_bkel(self):
+    def test_bkel_1(self):
         input = Program(
             [
                 ClassDecl(
@@ -29,6 +29,22 @@ class CheckerSuite(unittest.TestCase):
         )
         expect = """Redeclared Attribute: myVar"""
         self.assertTrue(TestChecker.test(input, expect, 1))
+
+    def test_bkel_2(self):
+        input = Program(
+            [
+                ClassDecl(
+                    Id("Program"), [
+                        MethodDecl(
+                            Static(), Id("main"), [],
+                            Block([Assign(Id("myVar"), IntLiteral(10))])
+                        )
+                    ]
+                )
+            ]
+        )
+        expect = """Undeclared Identifier: myVar"""
+        self.assertTrue(TestChecker.test(input, expect, 2))
 
     # def test_undeclared_function(self):
     #     """Simple program: int main() {} """
