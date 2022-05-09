@@ -186,11 +186,11 @@ class StaticChecker(BaseVisitor, Utils):
     def check(self):
         return self.visit(self.ast, None)
 
-    def visitProgram(self, ast, global_env=None):
+    def visitProgram(self, ast, c=None):
         self.meta_program = MetaProgram()
 
         # Traverse all classes
-        [self.visit(x, global_env) for x in ast.decl]
+        [self.visit(x, c) for x in ast.decl]
 
         if not self.meta_program.check_entrypoint():
             raise NoEntryPoint()
@@ -207,6 +207,17 @@ class StaticChecker(BaseVisitor, Utils):
             for x in ast.memlist
         ]
 
+    def visitAttributeDecl(self, ast, c: MetaClass):
+        static = type(ast.kind) is Static
+        const = type(ast.decl) is ConstDecl
+        if const:
+            partype = ast.decl.constType
+            name = ast.decl.constant.name
+        else:
+            partype = ast.decl.varType
+            name = ast.decl.variable.name
+        c.add_attr(name, partype, static, const)
+
     def visitMethodDecl(self, ast, meta_cls: MetaClass):
         static = type(ast.kind) is Static
         meta_cls.add_method(ast.name.name, ast.param, None, static)
@@ -222,11 +233,13 @@ class StaticChecker(BaseVisitor, Utils):
     def visitBlock(self, ast, c: tuple):
         meta_class, meta_method = c
         meta_method.enter_scope()
-        # TODO ast.inst is [None, None] for some reason
         [self.visit(x, c) for x in ast.inst]
         meta_method.exit_scope()
 
-    def visitAttributeDecl(self, ast, c):
+    def visitVarDecl(self, ast, c):
+        pass
+
+    def visitConstDecl(self, ast, c):
         pass
 
     def visitAssign(self, ast, c):

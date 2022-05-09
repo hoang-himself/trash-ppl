@@ -29,9 +29,11 @@ class CheckerSuite(unittest.TestCase):
         # )
         input = """
         Class Program {
-            main() {}
+            Val myVar: Int;
+            main() {
+                ## Var myVar: Int; ##
+            }
             ## myVar: String = "Hello World"; ##
-            ## myVar: Int; ##
         }"""
         expect = """Redeclared Attribute: myVar"""
         self.assertTrue(TestChecker.test(input, expect, 1))
