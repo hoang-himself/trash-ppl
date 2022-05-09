@@ -320,21 +320,39 @@ class StaticChecker(BaseVisitor):
                 return IntType()
             return FloatType()
 
-        # TODO bool
+        # Boolean
         if op == '==.':
-            pass
+            if type(left
+                   ) is not StringLiteral or type(right) is not StringLiteral:
+                raise TypeMismatchInExpression(ast)
+            return BoolType()
         if op in ['&&', '||']:
-            pass
+            if type(left) is not BooleanLiteral or type(
+                right
+            ) is not BooleanLiteral:
+                raise TypeMismatchInExpression(ast)
+            return BoolType()
 
-        # TODO string
+        # String
         if op == '+.':
-            pass
+            if type(left
+                   ) is not StringLiteral or type(right) is not StringLiteral:
+                raise TypeMismatchInExpression(ast)
+            return StringType()
 
-        # TODO relational
+        # Relational
         if op in ['==', '!=']:
-            pass
+            if type(left) not in [
+                IntLiteral, BooleanLiteral
+            ] or type(right) not in [IntLiteral, BooleanLiteral]:
+                raise TypeMismatchInExpression(ast)
+            return BoolType()
         if op in ['<', '>', '<=', '>=']:
-            pass
+            if type(left) not in [
+                IntLiteral, FloatLiteral
+            ] or type(right) not in [IntLiteral, FloatLiteral]:
+                raise TypeMismatchInExpression(ast)
+            return BoolType()
 
     def visitUnaryOp(self, ast, c: UnaryOp):
         body = ast.body
