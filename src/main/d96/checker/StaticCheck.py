@@ -268,11 +268,9 @@ class StaticChecker(BaseVisitor):
             raise Undeclared(Identifier(), ast.name)
         return meta_method.variable[ast.name]
 
-    def visitIf(self, ast, c):
-        pass
-
-    def visitFor(self, ast, c):
-        pass
+    def visitCallStmt(self, ast, c: tuple):
+        # TODO why obj?
+        rettype = self.visit(ast.obj, c)
 
     def visitBreak(self, ast, c):
         meta_class, meta_method = c
@@ -287,6 +285,49 @@ class StaticChecker(BaseVisitor):
     def visitReturn(self, ast, c):
         meta_class, meta_method = c
         meta_method.rettype = self.visit(ast.expr, c)
+
+    def visitIf(self, ast, c):
+        pass
+
+    def visitFor(self, ast, c):
+        pass
+
+    def visitBinaryOp(self, ast, c: BinaryOp):
+        left = ast.left
+        right = ast.right
+        op = ast.op
+
+        # Arithmetic
+        if op == '%':
+            if type(left) is not IntLiteral or type(right) is not IntLiteral:
+                raise TypeMismatchInExpression(ast)
+        if op in ['+', '-', '*', '/']:
+            if type(left) not in [
+                IntLiteral, FloatLiteral
+            ] or type(right) not in [IntLiteral, FloatLiteral]:
+                raise TypeMismatchInExpression(ast)
+            if type(left) is IntLiteral and type(right) is IntLiteral:
+                return IntType()
+            return FloatType()
+
+        # TODO bool
+        if op == '==.':
+            pass
+        if op in ['&&', '||']:
+            pass
+
+        # TODO string
+        if op == '+.':
+            pass
+
+        # TODO relational
+        if op in ['==', '!=']:
+            pass
+        if op in ['<', '>', '<=', '>=']:
+            pass
+
+    def visitUnaryOp(self, ast, c: UnaryOp):
+        pass
 
     def visitIntLiteral(self, ast, c):
         return IntType()
