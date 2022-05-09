@@ -6,8 +6,8 @@ from Visitor import *
 from StaticError import *
 
 # !!! COMMENT THIS OUT
-# from main.d96.utils.AST import *
-# from main.d96.utils.Visitor import *
+from main.d96.utils.AST import *
+from main.d96.utils.Visitor import *
 
 
 class MType:
@@ -113,7 +113,7 @@ class MetaClass:
 
     def add_method(self, name, partype, rettype=None, static=False):
         self.check_redeclared_method(name, partype)
-        self.method[name] = MetaMethod(name, partype, rettype)
+        self.method[name] = MetaMethod(name, partype, rettype, static)
 
     def get_or_raise_undeclared_attr(self, name):
         if name not in self.attr.keys():
