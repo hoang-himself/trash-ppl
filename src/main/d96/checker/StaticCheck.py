@@ -249,7 +249,7 @@ class StaticChecker(BaseVisitor):
         # Var can exist without being initialized
         if ast.varInit:
             rettype = self.visit(ast.varInit, c)
-            if rettype != ast.varType:
+            if type(rettype) != type(ast.varType):
                 raise TypeMismatchInStatement(ast)
 
     def visitConstDecl(self, ast, c: tuple):
@@ -258,8 +258,8 @@ class StaticChecker(BaseVisitor):
         if not ast.value:
             raise IllegalConstantExpression(ast.value)
         rettype = self.visit(ast.value, c)
-        if rettype != ast.constType:
-            raise TypeMismatchInStatement(ast)
+        if type(rettype) != type(ast.constType):
+            raise TypeMismatchInConstant(ast)
 
     def visitAssign(self, ast, c):
         lhs = self.visit(ast.lhs, c)
@@ -302,3 +302,6 @@ class StaticChecker(BaseVisitor):
 
     def visitIntLiteral(self, ast, c):
         return IntType()
+
+    def visitFloatLiteral(self, ast, c):
+        return FloatType()
