@@ -285,7 +285,8 @@ class StaticChecker(BaseVisitor):
             raise MustInLoop(Continue())
 
     def visitReturn(self, ast, c):
-        pass
+        meta_class, meta_method = c
+        meta_method.rettype = self.visit(ast.expr, c)
 
     def visitIntLiteral(self, ast, c):
         return IntType()
