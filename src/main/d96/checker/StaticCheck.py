@@ -353,7 +353,10 @@ class StaticChecker:
         meta_method.rettype = self.visit(ast.expr, c)
 
     def visitFieldAccess(self, ast, c: tuple):
-        pass
+        # meta_class, meta_method = c
+        cls = self.meta_program.get_class(ast.obj.name)
+        attr = cls.get_or_raise_undeclared_attr(ast.fieldname.name)
+        return attr.type
 
     def visitBinaryOp(self, ast, c: BinaryOp):
         left = ast.left
