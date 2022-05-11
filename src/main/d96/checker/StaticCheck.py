@@ -449,6 +449,13 @@ class StaticChecker:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
+    def visitArrayLiteral(self, ast, c: tuple):
+        partype = [self.visit(x, c) for x in ast.value]
+        partype_set = set(map(lambda x: type(x), partype))
+        if len(partype_set) > 1:
+            raise IllegalArrayLiteral(ast)
+        return ArrayType(len(partype), partype_set.pop())
+
     def visitIntLiteral(self, ast, c):
         return IntType()
 
