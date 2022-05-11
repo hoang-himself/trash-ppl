@@ -130,7 +130,9 @@ class MetaClass:
         self.check_redeclared_method(name, partype)
         if name == 'Destructor' and partype:
             raise TypeMismatchInStatement(SpecialMethod())
-        self.method[name] = MetaMethod(self.name, name, partype, rettype, static)
+        self.method[name] = MetaMethod(
+            self.name, name, partype, rettype, static
+        )
 
     def get_or_raise_undeclared_attr(self, name: str):
         if name not in self.attr.keys():
@@ -359,7 +361,14 @@ class StaticChecker:
         return meta_method.variable[ast.name]
 
     def visitCallStmt(self, ast, c: tuple):
-        cls = self.meta_program.get_class(ast.obj.name)
+        meta_class, meta_method = c
+        if type(ast.obj) is SelfLiteral:
+            # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158559#p491356
+            if meta_method.static:
+                raise IllegalMemberAccess(ast)
+            cls = meta_class
+        else:
+            cls = self.meta_program.get_class(ast.obj.name)
         method = cls.get_or_raise_undeclared_method(ast.method.name)
         partype = [self.visit(x, c) for x in ast.param]
 
@@ -420,7 +429,8 @@ class StaticChecker:
     def visitReturn(self, ast, c):
         meta_class, meta_method = c
         if meta_method.name == 'main' and meta_method.static and ast.expr:
-            raise TypeMismatchInExpression(ast)
+            # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158535#p491233
+            raise TypeMismatchInStatement(ast)
         meta_method.rettype = self.visit(ast.expr, c)
 
     def visitNewExpr(self, ast, c: tuple):
@@ -484,9 +494,9 @@ class StaticChecker:
 
         # Relational
         if op in ['==', '!=']:
+            # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158243#p490396
             if not (
-                type(left) in [IntType, BoolType] and
-                type(right) in [IntType, BoolType]
+                type(left) is type(right) and type(left) in [IntType, BoolType]
             ):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
