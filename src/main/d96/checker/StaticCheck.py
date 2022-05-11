@@ -171,11 +171,25 @@ class MetaProgram:
             name, self.cls[super_cls] if super_cls else None
         )
 
-    def add_method(self, cls: str, name: str, partype: List[VarDecl], rettype:Type=None, static:bool=False):
+    def add_method(
+        self,
+        cls: str,
+        name: str,
+        partype: List[VarDecl],
+        rettype: Type = None,
+        static: bool = False
+    ):
         self.check_undeclared_class(cls)
         self.cls[cls].add_method(name, partype, rettype, static)
 
-    def add_attr(self, cls:str, name:str, type:Type, static:bool=False, constant:bool=False):
+    def add_attr(
+        self,
+        cls: str,
+        name: str,
+        type: Type,
+        static: bool = False,
+        constant: bool = False
+    ):
         self.check_undeclared_class(cls)
         self.cls[cls].add_attr(name, type, static, constant)
 
