@@ -128,9 +128,6 @@ class MetaClass:
         static: bool = False
     ):
         self.check_redeclared_method(name, partype)
-        if name == 'Constructor':
-            # TODO handle implicit constructor
-            pass
         if name == 'Destructor' and partype:
             raise TypeMismatchInStatement(SpecialMethod())
         self.method[name] = MetaMethod(self.name, name, partype, rettype, static)
@@ -142,7 +139,10 @@ class MetaClass:
 
     def get_or_raise_undeclared_method(self, name: str):
         if name not in self.method.keys():
-            raise Undeclared(Method(), name)
+            if name == 'Constructor':
+                self.method[name] = MetaMethod(self.name, name, [], None, False)
+            else:
+                raise Undeclared(Method(), name)
         return self.method[name]
 
     def check_entrypoint(self):
