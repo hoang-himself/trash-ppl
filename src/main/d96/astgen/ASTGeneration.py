@@ -403,12 +403,17 @@ class ASTGeneration(D96Visitor):
         return self.visit(ctx.block_stmt())
 
     def visitFor_stmt(self, ctx: D96Parser.For_stmtContext):
-        expr1, expr2, expr3 = self.visit(ctx.for_range())
+        expr1, *expr2 = self.visit(ctx.for_range())
+        expr3 = None
+        if len(expr2) > 1:
+            expr2, expr3 = expr2
+        else:
+            expr2 = expr2[0]
         loop = self.visit(ctx.block_stmt()) if ctx.block_stmt() else []
         return For(Id(ctx.ID_NAME().getText()), expr1, expr2, loop, expr3)
 
     def visitFor_range(self, ctx: D96Parser.For_rangeContext):
-        return (self.visit(ctx.expr(e)) for e in ctx.expr())
+        return (self.visit(e) for e in ctx.expr())
 
     def visitBreak_stmt(self, ctx: D96Parser.Break_stmtContext):
         return Break()
