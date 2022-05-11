@@ -38,11 +38,15 @@ class MetaVariable:
 class MetaMethod:
     def __init__(
         self,
+        cls: str,
         name: str,
         partype: List[VarDecl],
         rettype: Type = None,
         static: bool = False
     ):
+        if cls == 'Program' and name == 'main' and not partype:
+            static = True
+
         self.name = name
         self.partype = partype
         self.rettype = rettype
@@ -89,7 +93,7 @@ class MetaMethod:
             self.variable[name] = [MetaVariable(name, type, self.scope, True)]
 
     def check_entrypoint(self):
-        return self.name == "main" and self.static
+        return self.name == 'main' and self.static
 
     def check_redeclared_variable(self, name: str):
         if name in self.variable.keys():
@@ -124,15 +128,12 @@ class MetaClass:
         static: bool = False
     ):
         self.check_redeclared_method(name, partype)
-        if self.name == "Program" and name == "main":
-            static = True
-        if name == "Constructor":
-            # Assuming one constructor per class
+        if name == 'Constructor':
+            # TODO handle implicit constructor
             pass
-        if name == "Destructor" and partype:
-            # TODO what do we raise here?
-            pass
-        self.method[name] = MetaMethod(name, partype, rettype, static)
+        if name == 'Destructor' and partype:
+            raise TypeMismatchInStatement(SpecialMethod())
+        self.method[name] = MetaMethod(self.name, name, partype, rettype, static)
 
     def get_or_raise_undeclared_attr(self, name: str):
         if name not in self.attr.keys():
@@ -412,11 +413,13 @@ class StaticChecker:
 
     def visitReturn(self, ast, c):
         meta_class, meta_method = c
+        if meta_method.name == 'main' and meta_method.static and ast.expr:
+            raise TypeMismatchInExpression(ast)
         meta_method.rettype = self.visit(ast.expr, c)
 
     def visitNewExpr(self, ast, c: tuple):
         cls = self.meta_program.get_class(ast.classname.name)
-        cons = cls.get_or_raise_undeclared_method("Constructor")
+        cons = cls.get_or_raise_undeclared_method('Constructor')
         partype = [self.visit(x, c) for x in ast.param]
         constype = list(map(lambda x: x.varType, cons.partype))
 
@@ -513,7 +516,6 @@ class StaticChecker:
         return ArrayType(len(partype), partype_set.pop())
 
     def visitArrayCell(self, ast, c: tuple):
-        # TODO [0] or [-1]?
         arr = self.visit(ast.arr, c)[0]
         if type(arr.type) is not ArrayType:
             raise TypeMismatchInExpression(ast)
