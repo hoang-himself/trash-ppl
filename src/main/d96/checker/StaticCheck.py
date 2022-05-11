@@ -203,6 +203,23 @@ class MetaProgram:
              for cls in self.cls.values()] if self.cls else [False]
         )
 
+    def check_type(self, match: Type, new: Type):
+        t_match = type(match)
+        t_new = type(new)
+
+        if t_match is ClassType or t_new is ClassType:
+            self.check_undeclared_class(match.classname.name)
+            self.check_undeclared_class(new.classname)
+        if t_match is t_new:
+            return True
+        if t_match is FloatType and t_new is IntType:
+            return True
+        if t_match is ArrayType and t_new is ArrayType:
+            return match.size == new.size and self.check_type(
+                match.eleType, new.eleType
+            )
+        return False
+
     def check_redeclared_class(self, name: str):
         if name in self.cls.keys():
             raise Redeclared(Class(), name)
@@ -372,6 +389,21 @@ class StaticChecker:
     def visitReturn(self, ast, c):
         meta_class, meta_method = c
         meta_method.rettype = self.visit(ast.expr, c)
+
+    def visitNewExpr(self, ast, c: tuple):
+        cls = self.meta_program.get_class(ast.classname.name)
+        cons = cls.get_or_raise_undeclared_method("Constructor")
+        partype = [self.visit(x, c) for x in ast.param]
+        constype = list(map(lambda x: x.varType, cons.partype))
+
+        # Assuming one constructor per class
+        if len(cons.partype) != len(partype):
+            raise TypeMismatchInExpression(ast)
+
+        for match, new in zip(constype, partype):
+            if not self.meta_program.check_type(match, new):
+                raise TypeMismatchInExpression(ast)
+        return ClassType(cls.name)
 
     def visitFieldAccess(self, ast, c: tuple):
         meta_class, meta_method = c
