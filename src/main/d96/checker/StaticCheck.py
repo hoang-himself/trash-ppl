@@ -274,8 +274,25 @@ class StaticChecker(BaseVisitor):
         return meta_method.variable[ast.name]
 
     def visitCallStmt(self, ast, c: tuple):
-        # TODO why obj?
-        rettype = self.visit(ast.obj, c)
+        cls = self.meta_program.get_class(ast.obj.name)
+        method = cls.get_or_raise_undeclared_method(ast.method.name)
+        partype = [self.visit(x, c) for x in ast.param]
+
+        # We don't care about rettype of statements
+        # Else it would be expressions
+        if method.partype != partype:
+            raise TypeMismatchInStatement(ast)
+
+    def visitCallExpr(self, ast, c: tuple):
+        cls = self.meta_program.get_class(ast.obj.name)
+        method = cls.get_or_raise_undeclared_method(ast.method.name)
+        partype = [self.visit(x, c) for x in ast.param]
+
+        # Expression must return type
+        if not method.rettype or method.partype != partype:
+            raise TypeMismatchInExpression(ast)
+
+        return method.rettype
 
     def visitIf(self, ast, c: tuple):
         condition = self.visit(ast.expr, c)
@@ -299,6 +316,7 @@ class StaticChecker(BaseVisitor):
             raise MustInLoop(Continue())
 
     def visitReturn(self, ast, c):
+        # TODO This is wrong
         meta_class, meta_method = c
         meta_method.rettype = self.visit(ast.expr, c)
 
