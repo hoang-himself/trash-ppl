@@ -382,48 +382,41 @@ class StaticChecker:
 
         # Arithmetic
         if op == '%':
-            if type(left) is not IntLiteral or type(right) is not IntLiteral:
+            if type(left) is not IntType or type(right) is not IntType:
                 raise TypeMismatchInExpression(ast)
         if op in ['+', '-', '*', '/']:
-            if type(left) not in [
-                IntLiteral, FloatLiteral
-            ] or type(right) not in [IntLiteral, FloatLiteral]:
+            if type(left) not in [IntType, FloatType
+                                 ] or type(right) not in [IntType, FloatType]:
                 raise TypeMismatchInExpression(ast)
-            if type(left) is IntLiteral and type(right) is IntLiteral:
+            if type(left) is IntType and type(right) is IntType:
                 return IntType()
             return FloatType()
 
         # Boolean
         if op == '==.':
-            if type(left
-                   ) is not StringLiteral or type(right) is not StringLiteral:
+            if type(left) is not StringType or type(right) is not StringType:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['&&', '||']:
-            if type(left) is not BooleanLiteral or type(
-                right
-            ) is not BooleanLiteral:
+            if type(left) is not BoolType or type(right) is not BoolType:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
         # String
         if op == '+.':
-            if type(left
-                   ) is not StringLiteral or type(right) is not StringLiteral:
+            if type(left) is not StringType or type(right) is not StringType:
                 raise TypeMismatchInExpression(ast)
             return StringType()
 
         # Relational
         if op in ['==', '!=']:
-            if type(left) not in [
-                IntLiteral, BooleanLiteral
-            ] or type(right) not in [IntLiteral, BooleanLiteral]:
+            if type(left) not in [IntType, BoolType
+                                 ] or type(right) not in [IntType, BoolType]:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['<', '>', '<=', '>=']:
-            if type(left) not in [
-                IntLiteral, FloatLiteral
-            ] or type(right) not in [IntLiteral, FloatLiteral]:
+            if type(left) not in [IntType, FloatType
+                                 ] or type(right) not in [IntType, FloatType]:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
@@ -433,13 +426,13 @@ class StaticChecker:
 
         # Arithmetic
         if op == '-':
-            if type(body) not in [IntLiteral, FloatLiteral]:
+            if type(body) not in [IntType, FloatType]:
                 raise TypeMismatchInExpression(ast)
-            return IntType() if type(body) is IntLiteral else FloatType()
+            return IntType() if type(body) is IntType else FloatType()
 
         # Boolean
         if op == '!':
-            if type(body) is not BooleanLiteral:
+            if type(body) is not BoolType:
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
