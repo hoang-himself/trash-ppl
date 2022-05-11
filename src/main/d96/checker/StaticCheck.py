@@ -380,7 +380,25 @@ class StaticChecker:
         self.visit(ast.elseStmt, c)
 
     def visitFor(self, ast, c):
-        pass
+        meta_class, meta_method = c
+        meta_method.enter_scope()
+        meta_method.enter_loop()
+
+        expr1 = self.visit(ast.expr1, c)
+        if type(expr1) is not IntType:
+            raise TypeMismatchInStatement(ast)
+        expr2 = self.visit(ast.expr2, c)
+        if type(expr2) is not IntType:
+            raise TypeMismatchInStatement(ast)
+        if ast.expr3:
+            expr3 = self.visit(ast.expr3, c)
+            if type(expr3) is not IntType:
+                raise TypeMismatchInStatement(ast)
+
+        self.visit(ast.loop, c)
+
+        meta_method.exit_loop()
+        meta_method.exit_scope()
 
     def visitBreak(self, ast, c):
         meta_class, meta_method = c
