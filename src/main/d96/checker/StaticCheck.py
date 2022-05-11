@@ -11,7 +11,13 @@ from main.d96.utils.Visitor import *
 
 
 class MetaAttribute:
-    def __init__(self, name, type, static=False, constant=False):
+    def __init__(
+        self,
+        name: str,
+        type: Type,
+        static: bool = False,
+        constant: bool = False
+    ):
         self.name = name
         self.type = type
         self.static = static
@@ -19,7 +25,9 @@ class MetaAttribute:
 
 
 class MetaVariable:
-    def __init__(self, name, type, scope, constant=False):
+    def __init__(
+        self, name: str, type: Type, scope: int, constant: bool = False
+    ):
         self.name = name
         self.type = type
         self.scope = scope
@@ -28,7 +36,11 @@ class MetaVariable:
 
 class MetaMethod:
     def __init__(
-        self, name, partype: List[VarDecl], rettype=None, static=False
+        self,
+        name: str,
+        partype: List[VarDecl],
+        rettype: Type = None,
+        static: bool = False
     ):
         self.name = name
         self.partype = partype
@@ -61,14 +73,14 @@ class MetaMethod:
             if val[-1].scope > self.scope:
                 self.variable[name].pop()
 
-    def add_var(self, name, type):
+    def add_var(self, name: str, type: Type):
         self.check_redeclared_variable(name)
         if name in self.variable.keys():
             self.variable[name] += [MetaVariable(name, type, self.scope)]
         else:
             self.variable[name] = [MetaVariable(name, type, self.scope)]
 
-    def add_const(self, name, type):
+    def add_const(self, name: str, type: Type):
         self.check_redeclared_variable(name)
         if name in self.variable.keys():
             self.variable[name] += [MetaVariable(name, type, self.scope, True)]
@@ -78,13 +90,14 @@ class MetaMethod:
     def check_entrypoint(self):
         return self.name == "main" and self.static
 
-    def check_redeclared_variable(self, name):
+    def check_redeclared_variable(self, name: str):
         if name in self.variable.keys():
             raise Redeclared(Variable(), name)
 
 
 class MetaClass:
-    def __init__(self, name, super_cls=None):
+    # PEP 484: Forward reference
+    def __init__(self, name: str, super_cls: 'MetaClass' = None):
         self.name = name
         self.attr = dict()
         self.method = dict()
@@ -92,22 +105,34 @@ class MetaClass:
             self.attr = super_cls.attr.copy()
             self.method = super_cls.method.copy()
 
-    def add_attr(self, name, type, static=False, constant=False):
+    def add_attr(
+        self,
+        name: str,
+        type: Type,
+        static: bool = False,
+        constant: bool = False
+    ):
         self.check_redeclared_attr(name)
         self.attr[name] = MetaAttribute(name, type, static, constant)
 
-    def add_method(self, name, partype, rettype=None, static=False):
+    def add_method(
+        self,
+        name: str,
+        partype: List[VarDecl],
+        rettype: Type = None,
+        static: bool = False
+    ):
         self.check_redeclared_method(name, partype)
         if self.name == "Program" and name == "main":
             static = True
         self.method[name] = MetaMethod(name, partype, rettype, static)
 
-    def get_or_raise_undeclared_attr(self, name):
+    def get_or_raise_undeclared_attr(self, name: str):
         if name not in self.attr.keys():
             raise Undeclared(Attribute(), name)
         return self.attr[name]
 
-    def get_or_raise_undeclared_method(self, name):
+    def get_or_raise_undeclared_method(self, name: str):
         if name not in self.method.keys():
             raise Undeclared(Method(), name)
         return self.method[name]
@@ -118,11 +143,11 @@ class MetaClass:
              for method in self.method.values()] if self.method else [False]
         )
 
-    def check_redeclared_attr(self, name):
+    def check_redeclared_attr(self, name: str):
         if name in self.attr.keys():
             raise Redeclared(Attribute(), name)
 
-    def check_redeclared_method(self, name, partype: List[VarDecl]):
+    def check_redeclared_method(self, name: str, partype: List[VarDecl]):
         if name in self.method.keys():
             # Test with type of parameters, not names
             partype_old = list(
@@ -137,7 +162,7 @@ class MetaProgram:
     def __init__(self):
         self.cls = dict()
 
-    def add_class(self, name, super_cls=None):
+    def add_class(self, name: str, super_cls=None):
         self.check_redeclared_class(name)
         if super_cls:
             self.check_undeclared_class(super_cls)
@@ -145,15 +170,15 @@ class MetaProgram:
             name, self.cls[super_cls] if super_cls else None
         )
 
-    def add_method(self, cls, name, partype, rettype=None, static=False):
+    def add_method(self, cls: str, name: str, partype: List[VarDecl], rettype:Type=None, static:bool=False):
         self.check_undeclared_class(cls)
         self.cls[cls].add_method(name, partype, rettype, static)
 
-    def add_attr(self, cls, name, type, static=False, constant=False):
+    def add_attr(self, cls:str, name:str, type:Type, static:bool=False, constant:bool=False):
         self.check_undeclared_class(cls)
         self.cls[cls].add_attr(name, type, static, constant)
 
-    def get_class(self, name):
+    def get_class(self, name: str):
         self.check_undeclared_class(name)
         return self.cls[name]
 
@@ -163,16 +188,18 @@ class MetaProgram:
              for cls in self.cls.values()] if self.cls else [False]
         )
 
-    def check_redeclared_class(self, name):
+    def check_redeclared_class(self, name: str):
         if name in self.cls.keys():
             raise Redeclared(Class(), name)
 
-    def check_undeclared_class(self, name):
+    def check_undeclared_class(self, name: str):
         if name not in self.cls.keys():
             raise Undeclared(Class(), name)
 
 
 class StaticChecker(BaseVisitor):
+    # c: Tuple[MetaClass, MetaProgram]
+
     def __init__(self, ast):
         self.ast = ast
 
@@ -316,9 +343,11 @@ class StaticChecker(BaseVisitor):
             raise MustInLoop(Continue())
 
     def visitReturn(self, ast, c):
-        # TODO This is wrong
         meta_class, meta_method = c
         meta_method.rettype = self.visit(ast.expr, c)
+
+    def visitFieldAccess(self, ast, c: tuple):
+        pass
 
     def visitBinaryOp(self, ast, c: BinaryOp):
         left = ast.left
