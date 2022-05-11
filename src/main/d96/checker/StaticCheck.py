@@ -351,7 +351,6 @@ class StaticChecker:
 
     def visitIf(self, ast, c: tuple):
         condition = self.visit(ast.expr, c)
-        # TODO concatenate condition
         if type(condition) != BoolType:
             raise TypeMismatchInStatement(ast)
         self.visit(ast.thenStmt, c)
@@ -390,11 +389,13 @@ class StaticChecker:
 
         # Arithmetic
         if op == '%':
-            if type(left) is not IntType or type(right) is not IntType:
+            if not (type(left) is IntType and type(right) is IntType):
                 raise TypeMismatchInExpression(ast)
         if op in ['+', '-', '*', '/']:
-            if type(left) not in [IntType, FloatType
-                                 ] or type(right) not in [IntType, FloatType]:
+            if not (
+                type(left) in [IntType, FloatType] and
+                type(right) in [IntType, FloatType]
+            ):
                 raise TypeMismatchInExpression(ast)
             if type(left) is IntType and type(right) is IntType:
                 return IntType()
@@ -402,29 +403,33 @@ class StaticChecker:
 
         # Boolean
         if op == '==.':
-            if type(left) is not StringType or type(right) is not StringType:
+            if not (type(left) is StringType and type(right) is StringType):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['&&', '||']:
-            if type(left) is not BoolType or type(right) is not BoolType:
+            if not (type(left) is BoolType and type(right) is BoolType):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
         # String
         if op == '+.':
-            if type(left) is not StringType or type(right) is not StringType:
+            if not (type(left) is StringType and type(right) is StringType):
                 raise TypeMismatchInExpression(ast)
             return StringType()
 
         # Relational
         if op in ['==', '!=']:
-            if type(left) not in [IntType, BoolType
-                                 ] or type(right) not in [IntType, BoolType]:
+            if not (
+                type(left) in [IntType, BoolType] and
+                type(right) in [IntType, BoolType]
+            ):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['<', '>', '<=', '>=']:
-            if type(left) not in [IntType, FloatType
-                                 ] or type(right) not in [IntType, FloatType]:
+            if not (
+                type(left) in [IntType, FloatType] and
+                type(right) in [IntType, FloatType]
+            ):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
