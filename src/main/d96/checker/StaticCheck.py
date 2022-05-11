@@ -359,8 +359,8 @@ class StaticChecker:
         return attr.type
 
     def visitBinaryOp(self, ast, c: BinaryOp):
-        left = ast.left
-        right = ast.right
+        left = self.visit(ast.left, c)
+        right = self.visit(ast.right, c)
         op = ast.op
 
         # Arithmetic
