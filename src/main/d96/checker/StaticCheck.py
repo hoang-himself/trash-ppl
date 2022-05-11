@@ -2,12 +2,13 @@
  * @author nhphung
 """
 from AST import *
+# Have to import Visitor because CodeGenerator does not import by itself
+# What the fuck is this chain of responsibility?
 from Visitor import *
 from StaticError import *
 
 # !!! COMMENT THIS OUT
 from main.d96.utils.AST import *
-from main.d96.utils.Visitor import *
 
 
 class MetaAttribute:
@@ -197,12 +198,17 @@ class MetaProgram:
             raise Undeclared(Class(), name)
 
 
-class StaticChecker(BaseVisitor):
+class StaticChecker:
     # c: Tuple[MetaClass, MetaProgram]
 
     def __init__(self, ast):
         self.ast = ast
 
+    # Copy from BaseVisitor because it doesn't do shit
+    def visit(self, ast, param):
+        return ast.accept(self, param)
+
+    # Copy from Utils because BKeL does not have this file
     def lookup(self, name, lst, func):
         for x in lst:
             if name == func(x):
