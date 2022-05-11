@@ -126,6 +126,12 @@ class MetaClass:
         self.check_redeclared_method(name, partype)
         if self.name == "Program" and name == "main":
             static = True
+        if name == "Constructor":
+            # Assuming one constructor per class
+            pass
+        if name == "Destructor" and partype:
+            # TODO what do we raise here?
+            pass
         self.method[name] = MetaMethod(name, partype, rettype, static)
 
     def get_or_raise_undeclared_attr(self, name: str):
