@@ -456,6 +456,21 @@ class StaticChecker:
             raise IllegalArrayLiteral(ast)
         return ArrayType(len(partype), partype_set.pop())
 
+    def visitArrayCell(self, ast, c: tuple):
+        # TODO [0] or [-1]?
+        arr = self.visit(ast.arr, c)[0]
+        if type(arr.type) is not ArrayType:
+            raise TypeMismatchInExpression(ast)
+
+        # Index syntax: [1][1]
+        idxtype = [self.visit(x, c) for x in ast.idx]
+        for idx in idxtype:
+            if type(idx) is not IntType:
+                raise TypeMismatchInExpression(ast)
+
+        # Cannot be type(arr.type.eleType) due to visitVarDecl
+        return arr.type.eleType
+
     def visitIntLiteral(self, ast, c):
         return IntType()
 
