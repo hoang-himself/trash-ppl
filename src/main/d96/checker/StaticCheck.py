@@ -312,8 +312,14 @@ class StaticChecker:
         # Var can exist without being initialized
         if ast.varInit:
             rettype = self.visit(ast.varInit, c)
-            if type(rettype) != type(ast.varType):
+            if not (type(rettype) is type(ast.varType)):
                 raise TypeMismatchInStatement(ast)
+            if type(rettype) is ArrayType:
+                if not (
+                    rettype.eleType is type(ast.varType.eleType) and
+                    rettype.size == ast.varType.size
+                ):
+                    raise TypeMismatchInStatement(ast)
 
     def visitConstDecl(self, ast, c: tuple):
         meta_class, meta_method = c
