@@ -311,7 +311,15 @@ class StaticChecker:
         if lhs.constant:
             raise CannotAssignToConstant(ast)
 
-        # TODO Cannot mismatch type
+        partype = type(lhs.type)
+        rettype = type(rhs)
+        COERCE_TYPE = {
+            IntType: [IntType],
+            FloatType: [IntType, FloatType],
+            BoolType: [BoolType]
+        }
+        if rettype not in COERCE_TYPE[partype]:
+            raise TypeMismatchInStatement(ast)
 
     # LHS of Assign
     def visitId(self, ast, c: tuple):
