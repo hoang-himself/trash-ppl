@@ -46,6 +46,10 @@ class MetaMethod:
     ):
         if cls == 'Program' and name == 'main' and not partype:
             static = True
+        partype_list = list(map(lambda x: x.variable.name, partype))
+        partype_set = set(partype_list)
+        if len(partype_list) != len(partype_set):
+            raise Redeclared(Parameter(), name)
 
         self.name = name
         self.partype = partype
