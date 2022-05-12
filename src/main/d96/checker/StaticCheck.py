@@ -106,7 +106,13 @@ class MetaMethod:
 
     def check_redeclared_variable(self, name: str):
         if name in self.variable.keys():
-            raise Redeclared(Variable(), name)
+            variable = self.variable[name][-1]
+            if self.scope > variable.scope:
+                return
+            if variable.constant:
+                raise Redeclared(Constant(), name)
+            else:
+                raise Redeclared(Variable(), name)
 
 
 # No MRO
@@ -140,7 +146,7 @@ class MetaClass:
         rettype: Type = None,
         static: bool = False
     ):
-        self.check_redeclared_method(name, partype)
+        self.check_redeclared_method(name)
         if name == 'Destructor' and partype:
             raise TypeMismatchInStatement(SpecialMethod())
         self.method[name] = MetaMethod(
@@ -170,15 +176,9 @@ class MetaClass:
         if name in self.attr.keys():
             raise Redeclared(Attribute(), name)
 
-    def check_redeclared_method(self, name: str, partype: List[VarDecl]):
+    def check_redeclared_method(self, name: str):
         if name in self.method.keys():
-            # Test with type of parameters, not names
-            partype_old = list(
-                map(lambda x: type(x.varType), self.method[name].partype)
-            )
-            partype_new = list(map(lambda x: type(x.varType), partype))
-            if partype_old == partype_new:
-                raise Redeclared(Method(), name)
+            raise Redeclared(Method(), name)
 
 
 class MetaProgram:
