@@ -1,6 +1,7 @@
 """
  * @author nhphung
 """
+from types import NoneType
 from AST import *
 # Have to import Visitor because CodeGenerator does not import by itself
 # What the fuck is this chain of responsibility?
@@ -254,6 +255,16 @@ class MetaProgram:
 class StaticChecker:
     # c: Tuple[MetaClass, MetaProgram]
 
+    COERCE_TYPE = {
+        FloatType: [IntType, FloatType],
+        BoolType: [BoolType],
+        IntType: [IntType],
+        StringType: [StringType],
+        ArrayType: [ArrayType],
+        ClassType: [ClassType, NoneType],
+        VoidType: [VoidType]
+    }
+
     def __init__(self, ast):
         self.ast = ast
 
@@ -338,13 +349,15 @@ class StaticChecker:
         meta_method.add_var(ast.variable.name, ast.varType)
         # Var can exist without being initialized
         if ast.varInit:
-            rettype = self.visit(ast.varInit, c)
-            if not (type(rettype) is type(ast.varType)):
+            ret = self.visit(ast.varInit, c)
+            partype = type(ast.varType)
+            rettype = type(ret)
+            if rettype not in self.COERCE_TYPE[partype]:
                 raise TypeMismatchInStatement(ast)
-            if type(rettype) is ArrayType:
+            if rettype is ArrayType:
                 if not (
-                    rettype.eleType is type(ast.varType.eleType) and
-                    rettype.size == ast.varType.size
+                    ret.eleType is type(ast.varType.eleType) and
+                    ret.size == ast.varType.size
                 ):
                     raise TypeMismatchInStatement(ast)
 
@@ -353,8 +366,10 @@ class StaticChecker:
         meta_method.add_const(ast.constant.name, ast.constType)
         if not ast.value:
             raise IllegalConstantExpression(ast.value)
-        rettype = self.visit(ast.value, c)
-        if type(rettype) != type(ast.constType):
+        ret = self.visit(ast.value, c)
+        parttype = type(ast.constType)
+        rettype = type(ret)
+        if rettype not in self.COERCE_TYPE[parttype]:
             raise TypeMismatchInConstant(ast)
 
     def visitAssign(self, ast, c):
@@ -370,12 +385,7 @@ class StaticChecker:
 
         partype = type(lhs.type)
         rettype = type(rhs)
-        COERCE_TYPE = {
-            IntType: [IntType],
-            FloatType: [IntType, FloatType],
-            BoolType: [BoolType]
-        }
-        if rettype not in COERCE_TYPE[partype]:
+        if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInStatement(ast)
 
     # LHS of Assign
@@ -558,7 +568,7 @@ class StaticChecker:
         partype = [self.visit(x, c) for x in ast.value]
         # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158504#p491368
         if len(partype) < 1:
-            return VoidType()
+            return NoneType()
         partype_set = set(map(lambda x: type(x), partype))
         if len(partype_set) > 1:
             raise IllegalArrayLiteral(ast)
@@ -589,3 +599,6 @@ class StaticChecker:
 
     def visitBooleanLiteral(self, ast, c):
         return BoolType()
+
+    def visitNullLiteral(self, ast, c):
+        return NoneType()
