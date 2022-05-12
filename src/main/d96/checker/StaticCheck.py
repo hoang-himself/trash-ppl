@@ -17,22 +17,30 @@ class MetaAttribute:
         self,
         name: str,
         type: Type,
+        init: bool,
         static: bool = False,
         constant: bool = False
     ):
         self.name = name
         self.type = type
+        self.init = init
         self.static = static
         self.constant = constant
 
 
 class MetaVariable:
     def __init__(
-        self, name: str, type: Type, scope: int, constant: bool = False
+        self,
+        name: str,
+        type: Type,
+        scope: int,
+        init: bool,
+        constant: bool = False
     ):
         self.name = name
         self.type = type
         self.scope = scope
+        self.init = init
         self.constant = constant
 
 
@@ -61,7 +69,7 @@ class MetaMethod:
         # because we must keep track of variables in outer scope
         self.variable = {
             x.variable.name:
-            [MetaVariable(x.variable.name, x.varType, 2, False)]
+            [MetaVariable(x.variable.name, x.varType, 2, True, False)]
             for x in partype
         }
 
@@ -87,19 +95,23 @@ class MetaMethod:
             if val[-1].scope > self.scope:
                 self.variable[name].pop()
 
-    def add_var(self, name: str, type: Type):
+    def add_var(self, name: str, type: Type, init: bool):
         self.check_redeclared_variable(name)
         if name in self.variable.keys():
-            self.variable[name] += [MetaVariable(name, type, self.scope)]
+            self.variable[name] += [MetaVariable(name, type, self.scope, init)]
         else:
-            self.variable[name] = [MetaVariable(name, type, self.scope)]
+            self.variable[name] = [MetaVariable(name, type, self.scope, init)]
 
-    def add_const(self, name: str, type: Type):
-        self.check_redeclared_variable(name)
+    def add_const(self, name: str, type: Type, init: bool):
+        self.check_redeclared_const(name)
         if name in self.variable.keys():
-            self.variable[name] += [MetaVariable(name, type, self.scope, True)]
+            self.variable[name] += [
+                MetaVariable(name, type, self.scope, True, init)
+            ]
         else:
-            self.variable[name] = [MetaVariable(name, type, self.scope, True)]
+            self.variable[name] = [
+                MetaVariable(name, type, self.scope, True, init)
+            ]
 
     def get_or_raise_undeclared_variable(self, name: str):
         if name not in self.variable.keys():
@@ -112,12 +124,14 @@ class MetaMethod:
     def check_redeclared_variable(self, name: str):
         if name in self.variable.keys():
             variable = self.variable[name][-1]
-            if self.scope > variable.scope:
-                return
-            if variable.constant:
-                raise Redeclared(Constant(), name)
-            else:
+            if self.scope <= variable.scope:
                 raise Redeclared(Variable(), name)
+
+    def check_redeclared_const(self, name: str):
+        if name in self.variable.keys():
+            const = self.variable[name][-1]
+            if self.scope <= const.scope:
+                raise Redeclared(Constant(), name)
 
 
 # No MRO
@@ -138,11 +152,12 @@ class MetaClass:
         self,
         name: str,
         type: Type,
+        init: bool,
         static: bool = False,
         constant: bool = False
     ):
         self.check_redeclared_attr(name)
-        self.attr[name] = MetaAttribute(name, type, static, constant)
+        self.attr[name] = MetaAttribute(name, type, init, static, constant)
 
     def add_method(
         self,
@@ -214,11 +229,12 @@ class MetaProgram:
         cls: str,
         name: str,
         type: Type,
+        init: bool,
         static: bool = False,
         constant: bool = False
     ):
         self.check_undeclared_class(cls)
-        self.cls[cls].add_attr(name, type, static, constant)
+        self.cls[cls].add_attr(name, type, init, static, constant)
 
     def get_class(self, name: str):
         self.check_undeclared_class(name)
@@ -328,7 +344,7 @@ class StaticChecker:
 
         if inittype and not self.meta_program.check_type(partype, inittype):
             raise TypeMismatchInStatement(ast.decl)
-        c.add_attr(name, partype, static, const)
+        c.add_attr(name, partype, True if inittype else False, static, const)
 
     def visitMethodDecl(self, ast, meta_cls: MetaClass):
         static = type(ast.kind) is Static
@@ -350,7 +366,6 @@ class StaticChecker:
 
     def visitVarDecl(self, ast, c: tuple):
         meta_class, meta_method = c
-        meta_method.add_var(ast.variable.name, ast.varType)
         # Var can exist without being initialized
         if ast.varInit:
             ret = self.visit(ast.varInit, c)
@@ -367,9 +382,16 @@ class StaticChecker:
                 ):
                     raise TypeMismatchInStatement(ast)
 
+        if ast.varInit:
+            if type(ast.varType) is ClassType and rettype is NoneType:
+                meta_method.add_var(ast.variable.name, ast.varType, False)
+            else:
+                meta_method.add_var(ast.variable.name, ast.varType, True)
+        else:
+            meta_method.add_var(ast.variable.name, ast.varType, False)
+
     def visitConstDecl(self, ast, c: tuple):
         meta_class, meta_method = c
-        meta_method.add_const(ast.constant.name, ast.constType)
         if not ast.value:
             raise IllegalConstantExpression(ast.value)
         ret = self.visit(ast.value, c)
@@ -379,19 +401,32 @@ class StaticChecker:
             self.meta_program.get_class(ast.varType.classname.name)
         if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInConstant(ast)
+        meta_method.add_const(ast.constant.name, ast.constType, True)
 
     def visitAssign(self, ast, c):
+        meta_class, meta_method = c
         lhs = self.visit(ast.lhs, c)
         rhs = self.visit(ast.exp, c)
 
         if not lhs:
             raise Undeclared(Identifier(), ast.lhs.name)
+        if type(ast.lhs) is FieldAccess:
+            obj = meta_method.get_or_raise_undeclared_variable(
+                ast.lhs.obj.name
+            )[-1]
+            cls = self.meta_program.get_class(obj.type.classname.name)
+            cls.get_or_raise_undeclared_attr(ast.lhs.fieldname.name)
+            partype = type(lhs)
+        else:
+            if type(ast.lhs) is not ArrayCell:
+                lhs = lhs[-1]
+            if type(lhs) is MetaVariable and lhs.constant:
+                raise CannotAssignToConstant(ast)
+            if type(ast.lhs) is ArrayCell:
+                partype = type(lhs)
+            else:
+                partype = type(lhs.type)
 
-        lhs = lhs[-1]
-        if lhs.constant:
-            raise CannotAssignToConstant(ast)
-
-        partype = type(lhs.type)
         rettype = type(rhs)
         if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInStatement(ast)
@@ -411,7 +446,8 @@ class StaticChecker:
                 raise IllegalMemberAccess(ast)
             cls = meta_class
         else:
-            cls = self.meta_program.get_class(ast.obj.name)
+            obj = meta_method.get_or_raise_undeclared_variable(ast.obj.name)[-1]
+            cls = self.meta_program.get_class(obj.type.classname.name)
         method = cls.get_or_raise_undeclared_method(ast.method.name)
         partype = [self.visit(x, c) for x in ast.param]
 
@@ -501,7 +537,11 @@ class StaticChecker:
         if type(ast.obj) is SelfLiteral:
             cls = meta_class
         else:
-            cls = self.meta_program.get_class(ast.obj.name)
+            obj = self.visit(ast.obj, c)[-1]
+            if not obj.init:
+                raise Undeclared(Identifier(), ast.obj.name)
+            obj_type = obj.type
+            cls = self.meta_program.get_class(obj_type.classname.name)
         attr = cls.get_or_raise_undeclared_attr(ast.fieldname.name)
         return attr.type
 
@@ -593,7 +633,6 @@ class StaticChecker:
             if type(idx) is not IntType:
                 raise TypeMismatchInExpression(ast)
 
-        # Cannot be type(arr.type.eleType) due to visitVarDecl
         return arr.type.eleType
 
     def visitStringLiteral(self, ast, c):
