@@ -104,29 +104,29 @@ class CheckerSuite(unittest.TestCase):
         expect = """Type Mismatch In Constant Declaration: ConstDecl(Id(myVar),IntType,FloatLit(1.2))"""
         self.assertTrue(TestChecker.test(input, expect, 5))
 
-    def test_spec(self):
-        input = """
-            Class Shape {
-                Val $numOfShape: Int = 0;
-                Val immutableAttribute: Int = 0;
-                $getNumOfShape() {
-                    Return Shape::$numOfShape;
-                }
-            }
-            Class Rectangle: Shape {
-                Var length, width: Int;
-                getArea() {
-                    Return Self.length * Self.width;
-                }
-            }
-            Class Program {
-                main() {
-                    Out.printInt(Shape::$numOfShape);
-                }
-            }
-        """
-        expect = """Undeclared Class: Out"""
-        self.assertTrue(TestChecker.test(input, expect, 6))
+    # def test_spec(self):
+    #     input = """
+    #         Class Shape {
+    #             Val $numOfShape: Int = 0;
+    #             Val immutableAttribute: Int = 0;
+    #             $getNumOfShape() {
+    #                 Return Shape::$numOfShape;
+    #             }
+    #         }
+    #         Class Rectangle: Shape {
+    #             Var length, width: Int;
+    #             getArea() {
+    #                 Return Self.length * Self.width;
+    #             }
+    #         }
+    #         Class Program {
+    #             main() {
+    #                 Out.printInt(Shape::$numOfShape);
+    #             }
+    #         }
+    #     """
+    #     expect = """Undeclared Class: Out"""
+    #     self.assertTrue(TestChecker.test(input, expect, 69))
 
     def test_1(self):
         input = """
@@ -155,3 +155,36 @@ class CheckerSuite(unittest.TestCase):
         """
         expect = """Redeclared Method: sample"""
         self.assertTrue(TestChecker.test(input, expect, 103))
+
+    def test_4(self):
+        input = """
+            Class Program {
+                main() {
+                    Var arr: Array[Array[String, 3], 2] = Array(Array(1,1,1),Array(1,1,"a"));
+                }
+            }
+        """
+        expect = """Illegal Array Literal: [IntLit(1),IntLit(1),StringLit(a)]"""
+        self.assertTrue(TestChecker.test(input, expect, 104))
+
+    def test_5(self):
+        input = """
+            Class Program {
+                Var a: Array[Array[Int, 3], 2] = Array(Array(2, 3, 4), Array());
+                main() {}
+            }
+        """
+        expect = """Illegal Array Literal: [[IntLit(2),IntLit(3),IntLit(4)],[]]"""
+        self.assertTrue(TestChecker.test(input, expect, 105))
+
+    def test_6(self):
+        input = """
+            Class Program {
+                main() {
+                    Val x: Int = 0;
+                    Foreach (x In 1 .. 10 By 2) {}
+                }
+            }
+        """
+        expect = """Cannot Assign To Constant: AssignStmt(Id(x),IntLit(1))"""
+        self.assertTrue(TestChecker.test(input, expect, 106))
