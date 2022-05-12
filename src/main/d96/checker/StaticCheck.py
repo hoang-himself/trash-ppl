@@ -92,6 +92,11 @@ class MetaMethod:
         else:
             self.variable[name] = [MetaVariable(name, type, self.scope, True)]
 
+    def get_or_raise_undeclared_variable(self, name: str):
+        if name not in self.variable.keys():
+            raise Undeclared(Variable(), name)
+        return self.variable[name]
+
     def check_entrypoint(self):
         return self.name == 'main' and self.static
 
@@ -100,6 +105,10 @@ class MetaMethod:
             raise Redeclared(Variable(), name)
 
 
+# No MRO
+# http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158569#p491360
+# No forward reference
+# http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158537#p491354
 class MetaClass:
     # PEP 484: Forward reference
     def __init__(self, name: str, super_cls: 'MetaClass' = None):
@@ -267,6 +276,9 @@ class StaticChecker:
         if not self.meta_program.check_entrypoint():
             raise NoEntryPoint()
 
+        # All testcases are error-guaranteed
+        # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158488#p491231
+
     def visitClassDecl(self, ast, c=None):
         # Load classes into meta_program
         self.meta_program.add_class(
@@ -409,6 +421,11 @@ class StaticChecker:
         meta_method.enter_scope()
         meta_method.enter_loop()
 
+        # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158527#p491282
+        counter = meta_method.get_or_raise_undeclared_variable(ast.id.name)[0]
+        if counter.constant:
+            # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158471#p491277
+            raise CannotAssignToConstant(Assign(ast.id, ast.expr1))
         expr1 = self.visit(ast.expr1, c)
         if type(expr1) is not IntType:
             raise TypeMismatchInStatement(ast)
@@ -556,6 +573,9 @@ class StaticChecker:
 
         # Cannot be type(arr.type.eleType) due to visitVarDecl
         return arr.type.eleType
+
+    def visitStringLiteral(self, ast, c):
+        return StringType()
 
     def visitIntLiteral(self, ast, c):
         return IntType()
