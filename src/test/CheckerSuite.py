@@ -1756,65 +1756,54 @@ class CheckerSuite(unittest.TestCase):
 #         expect = "Undeclared Class: C"
 #         self.assertTrue(TestChecker.test(input, expect, 496))
 
-#     def test_497(self):
-#         # NOTE: This case check for param compatiblity of Constructor
-#         input = """
-# Class Program { main() {} }
-#                         Class A
-#                         {
-#                         }
-#                         Class B:A
-#                         {
-#                             Var a: A = New B();
-#                         }
-#             """
+    # def test_497(self):
+    #     input = """
+    #         Class Program { main() {} }
+    #         Class A {}
+    #         Class B:A {
+    #             Var a: A = New B();
+    #         }
+    #         """
 
-#         expect = "Type Mismatch In Statement: VarDecl(Id(a),ClassType(Id(A)),NewExpr(Id(B),[]))"
-#         self.assertTrue(TestChecker.test(input, expect, 497))
+    #     expect = "Type Mismatch In Statement: VarDecl(Id(a),ClassType(Id(A)),NewExpr(Id(B),[]))"
+    #     self.assertTrue(TestChecker.test(input, expect, 497))
 
-#     def test_498(self):
-#         input = """
-# Class Program { main() {} }
-#                         Class Program{
-#                             Val $someStatic : Int = 10;
-#                             foo() {
-#                                 Var Program : Float = 1.0;
-#                                 Var x : Int = Program::$someStatic;
-#                            }
-#                         }
-#             """
+    def test_498(self):
+        input = """
+            Class Program{
+                Val $someStatic : Int = 10;
+                foo() {
+                    Var Program : Float = 1.0;
+                    Var x : Int = Program::$someStatic;
+                }
+            }
+        """
 
-#         expect = "No Entry Point"
-#         self.assertTrue(TestChecker.test(input, expect, 498))
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 498))
 
-#     def test_499(self):
-#         input = """
-# Class Program { main() {} }
-#                 Class A {
-#                       Var foo: Int = 1;
-#                       foo() {
-#                       }
-#                 }
-#             """
+    def test_499(self):
+        input = """
+            Class A {
+                Var foo: Int = 1;
+                foo() {}
+            }
+        """
 
-#         expect = "No Entry Point"
-#         self.assertTrue(TestChecker.test(input, expect, 499))
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 499))
 
-#     def test_500(self):
-#         input = """
-# Class Program { main() {} }
-#                 Class A {
-#                     Val $a: Int = 1;
-#                 }
-#                 Class B{
-#                     Var $a: Int = 1;
-#                     Val $b: Int = A::$a;
-#                     foo(){
-#                         Val c: Int = B::$b+1;
-#                         Return 1;
-#                     }
-#                 }
-#             """
+    def test_500(self):
+        input = """
+            Class B {
+                Var $a: Int = 1;
+                Val $b: Int = 2;
+                foo(){
+                    Val c: Int = 1;
+                    Return 1;
+                }
+            }
+            """
 
-#         expect = "No Entry Point"
-#         self.assertTrue(TestChecker.test(input, expect, 499))
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 500))

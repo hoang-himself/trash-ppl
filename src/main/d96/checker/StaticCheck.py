@@ -541,7 +541,10 @@ class StaticChecker:
             if not obj.init:
                 raise Undeclared(Identifier(), ast.obj.name)
             obj_type = obj.type
-            cls = self.meta_program.get_class(obj_type.classname.name)
+            if type(obj_type) is ClassType:
+                cls = self.meta_program.get_class(obj_type.classname.name)
+            else:
+                cls = self.meta_program.get_class(obj.name)
         attr = cls.get_or_raise_undeclared_attr(ast.fieldname.name)
         return attr.type
 
