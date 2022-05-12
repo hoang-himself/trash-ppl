@@ -557,7 +557,7 @@ class StaticChecker:
             return BoolType()
 
     def visitUnaryOp(self, ast, c: UnaryOp):
-        body = ast.body
+        body = self.visit(ast.body, c)
         op = ast.op
 
         # Arithmetic
