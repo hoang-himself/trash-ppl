@@ -59,7 +59,11 @@ class MetaMethod:
 
         # { str: List[MetaVariable] }
         # because we must keep track of variables in outer scope
-        self.variable = dict()
+        self.variable = {
+            x.variable.name:
+            [MetaVariable(x.variable.name, x.varType, 2, False)]
+            for x in partype
+        }
 
         # Not in loop
         self.loop = 0
@@ -352,6 +356,8 @@ class StaticChecker:
             ret = self.visit(ast.varInit, c)
             partype = type(ast.varType)
             rettype = type(ret)
+            if partype is ClassType:
+                self.meta_program.get_class(ast.varType.classname.name)
             if rettype not in self.COERCE_TYPE[partype]:
                 raise TypeMismatchInStatement(ast)
             if rettype is ArrayType:
@@ -367,9 +373,11 @@ class StaticChecker:
         if not ast.value:
             raise IllegalConstantExpression(ast.value)
         ret = self.visit(ast.value, c)
-        parttype = type(ast.constType)
+        partype = type(ast.constType)
         rettype = type(ret)
-        if rettype not in self.COERCE_TYPE[parttype]:
+        if partype is ClassType:
+            self.meta_program.get_class(ast.varType.classname.name)
+        if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInConstant(ast)
 
     def visitAssign(self, ast, c):
