@@ -526,6 +526,9 @@ class StaticChecker:
 
     def visitArrayLiteral(self, ast, c: tuple):
         partype = [self.visit(x, c) for x in ast.value]
+        # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158504#p491368
+        if len(partype) < 1:
+            return VoidType()
         partype_set = set(map(lambda x: type(x), partype))
         if len(partype_set) > 1:
             raise IllegalArrayLiteral(ast)
