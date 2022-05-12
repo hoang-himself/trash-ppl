@@ -285,9 +285,18 @@ class StaticChecker:
         if const:
             partype = ast.decl.constType
             name = ast.decl.constant.name
+            if not ast.decl.value:
+                raise IllegalConstantExpression(ast)
+            inittype = self.visit(ast.decl.value, c)
         else:
             partype = ast.decl.varType
             name = ast.decl.variable.name
+            inittype = self.visit(
+                ast.decl.varInit, c
+            ) if ast.decl.varInit else None
+
+        if inittype and not self.meta_program.check_type(partype, inittype):
+            raise TypeMismatchInStatement(ast.decl)
         c.add_attr(name, partype, static, const)
 
     def visitMethodDecl(self, ast, meta_cls: MetaClass):
