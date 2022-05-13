@@ -962,18 +962,18 @@ class CheckerSuite(unittest.TestCase):
         expect = "Illegal Array Literal: [IntLit(1),FloatLit(2.3)]"
         self.assertTrue(TestChecker.test(input, expect, 452))
 
-    # def test_453(self):
-    #     input = """
-    #     Class Program {
-    #         foo() {
-    #             Return 1;
-    #         }
-    #         main() {
-    #             Var a:Int = Self.foo(1);
-    #         }
-    #     }"""
-    #     expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
-    #     self.assertTrue(TestChecker.test(input, expect, 453))
+    def test_453(self):
+        input = """
+        Class Program {
+            foo() {
+                Return 1;
+            }
+            main() {
+                Var a:Int = Self.foo(1);
+            }
+        }"""
+        expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
+        self.assertTrue(TestChecker.test(input, expect, 453))
 
     def test_454(self):
         input = """
@@ -1370,18 +1370,18 @@ class CheckerSuite(unittest.TestCase):
         expect = "Type Mismatch In Statement: VarDecl(Id(e),IntType,FieldAccess(Self(),Id(b)))"
         self.assertTrue(TestChecker.test(input, expect, 481))
 
-    # def test_482(self):
-    #     input = """
-    #     Class Program {
-    #         foo() {
-    #             Return 1;
-    #         }
-    #         main() {
-    #             Var a:Int = Self.foo(1);
-    #         }
-    #     }"""
-    #     expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
-    #     self.assertTrue(TestChecker.test(input, expect, 482))
+    def test_482(self):
+        input = """
+        Class Program {
+            foo() {
+                Return 1;
+            }
+            main() {
+                Var a:Int = Self.foo(1);
+            }
+        }"""
+        expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
+        self.assertTrue(TestChecker.test(input, expect, 482))
 
     # def test_483(self):
     #     input = """
@@ -1403,19 +1403,19 @@ class CheckerSuite(unittest.TestCase):
         expect = "Illegal Array Literal: [IntLit(1),StringLit(2)]"
         self.assertTrue(TestChecker.test(input, expect, 484))
 
-    # def test_485(self):
-    #     input = """
-    #     Class O {
-    #         $foo() {}
-    #     }
-    #     Class Program {
-    #         foo() {}
-    #         main() {
-    #             Var a: Int = O::$foo();
-    #         }
-    #     }"""
-    #     expect = "Type Mismatch In Expression: CallExpr(Id(O),Id($foo),[])"
-    #     self.assertTrue(TestChecker.test(input, expect, 485))
+    def test_485(self):
+        input = """
+        Class O {
+            $foo() {}
+        }
+        Class Program {
+            foo() {}
+            main() {
+                Var a: Int = O::$foo();
+            }
+        }"""
+        expect = "Type Mismatch In Expression: CallExpr(Id(O),Id($foo),[])"
+        self.assertTrue(TestChecker.test(input, expect, 485))
 
     def test_486(self):
         input = """

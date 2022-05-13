@@ -473,17 +473,20 @@ class StaticChecker:
 
     def visitCallExpr(self, ast, c: tuple):
         meta_class, meta_method = c
-        obj = self.visit(ast.obj, c)
-        if type(obj) is ClassType:
-            cls = self.meta_program.get_class(obj.classname.name)
+        if ast.method.name[0] == '$':
+            cls = self.meta_program.get_class(ast.obj.name)
         else:
-            obj = obj[-1]
-            cls = self.meta_program.get_class(obj.type.classname.name)
+            obj = self.visit(ast.obj, c)
+            if type(obj) is ClassType:
+                cls = self.meta_program.get_class(obj.classname.name)
+            else:
+                obj = obj[-1]
+                cls = self.meta_program.get_class(obj.type.classname.name)
         method = cls.get_or_raise_undeclared_method(ast.method.name)
         partype = [self.visit(x, c) for x in ast.param]
 
         # Expression must return type
-        if not method.rettype:
+        if not method.rettype or len(method.partype) != len(partype):
             raise TypeMismatchInExpression(ast)
         for x, y in zip(method.partype, partype):
             if type(y) not in self.COERCE_TYPE[type(x.varType)]:
