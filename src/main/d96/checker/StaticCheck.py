@@ -1,7 +1,6 @@
 """
  * @author nhphung
 """
-from types import NoneType
 from AST import *
 # Have to import Visitor because CodeGenerator does not import by itself
 # What the fuck is this chain of responsibility?
@@ -281,7 +280,7 @@ class StaticChecker:
         IntType: [IntType],
         StringType: [StringType],
         ArrayType: [ArrayType],
-        ClassType: [ClassType, NoneType],
+        ClassType: [ClassType],
         VoidType: [VoidType]
     }
 
@@ -373,7 +372,7 @@ class StaticChecker:
             rettype = type(ret)
             if partype is ClassType:
                 self.meta_program.get_class(ast.varType.classname.name)
-            if rettype not in self.COERCE_TYPE[partype]:
+            if ret and rettype not in self.COERCE_TYPE[partype]:
                 raise TypeMismatchInStatement(ast)
             if rettype is ArrayType:
                 if not (
@@ -382,8 +381,8 @@ class StaticChecker:
                 ):
                     raise TypeMismatchInStatement(ast)
 
-        if ast.varInit:
-            if type(ast.varType) is ClassType and rettype is NoneType:
+        if ast.varInit and type(ast.varInit) is not NullLiteral:
+            if type(ast.varType) is ClassType and rettype is None:
                 meta_method.add_var(ast.variable.name, ast.varType, False)
             else:
                 meta_method.add_var(ast.variable.name, ast.varType, True)
@@ -668,7 +667,7 @@ class StaticChecker:
         partype = [self.visit(x, c) for x in ast.value]
         # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158504#p491368
         if len(partype) < 1:
-            return NoneType()
+            return NullLiteral()
         partype_set = set(map(lambda x: type(x), partype))
         if len(partype_set) > 1:
             raise IllegalArrayLiteral(ast)
@@ -718,4 +717,4 @@ class StaticChecker:
         return ClassType(Id(c[0].name))
 
     def visitNullLiteral(self, ast, c):
-        return NoneType()
+        return None
