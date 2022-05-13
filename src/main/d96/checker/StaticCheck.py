@@ -92,7 +92,7 @@ class MetaMethod:
         self.scope -= 1
         # Remove inner scope variables
         for name, val in self.variable.items():
-            if val[-1].scope > self.scope:
+            if val and val[-1].scope > self.scope:
                 self.variable[name].pop()
 
     def add_var(self, name: str, type: Type, init: bool):
@@ -250,7 +250,7 @@ class MetaProgram:
         t_match = type(match)
         t_new = type(new)
 
-        if t_match is ClassType or t_new is ClassType:
+        if t_match is ClassType and t_new is ClassType:
             self.check_undeclared_class(match.classname.name)
             self.check_undeclared_class(new.classname)
         if t_match is t_new:
@@ -452,6 +452,7 @@ class StaticChecker:
 
     def visitCallStmt(self, ast, c: tuple):
         meta_class, meta_method = c
+        obj = self.visit(ast.obj, c)
         if type(ast.obj) is SelfLiteral:
             # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158559#p491356
             if meta_method.static:
@@ -470,8 +471,12 @@ class StaticChecker:
 
     def visitCallExpr(self, ast, c: tuple):
         meta_class, meta_method = c
-        obj = self.visit(ast.obj, c)[-1]
-        cls = self.meta_program.get_class(obj.type.classname.name)
+        obj = self.visit(ast.obj, c)
+        if type(obj) is ClassType:
+            cls = self.meta_program.get_class(obj.classname.name)
+        else:
+            obj = obj[-1]
+            cls = self.meta_program.get_class(obj.type.classname.name)
         method = cls.get_or_raise_undeclared_method(ast.method.name)
         partype = [self.visit(x, c) for x in ast.param]
 
@@ -485,11 +490,27 @@ class StaticChecker:
         return method.rettype
 
     def visitIf(self, ast, c: tuple):
+        meta_class, meta_method = c
         condition = self.visit(ast.expr, c)
         if type(condition) != BoolType:
             raise TypeMismatchInStatement(ast)
-        self.visit(ast.thenStmt, c)
-        self.visit(ast.elseStmt, c)
+
+        if isinstance(ast.thenStmt, (Return, Block, If)):
+            self.visit(ast.thenStmt, c)
+        else:
+            if isinstance(ast.thenStmt, (For, Break, Continue)):
+                self.visit(ast.thenStmt, c)
+            else:
+                self.visit(ast.thenStmt, meta_class)
+
+        if ast.elseStmt:
+            if isinstance(ast.elseStmt, (Return, Block, If)):
+                self.visit(ast.elseStmt, c)
+            else:
+                if isinstance(ast.elseStmt, (For, Break, Continue)):
+                    self.visit(ast.elseStmt,  c)
+                else:
+                    self.visit(ast.elseStmt, meta_class)
 
     def visitFor(self, ast, c):
         meta_class, meta_method = c
@@ -551,21 +572,18 @@ class StaticChecker:
 
     def visitFieldAccess(self, ast, c: tuple):
         meta_class, meta_method = c
-        if type(ast.obj) is SelfLiteral:
+        obj = self.visit(ast.obj, c)
+        if type(obj) is ClassType:
             cls = meta_class
         else:
-            obj = self.visit(ast.obj, c)
-            if type(obj) is ClassType:
-                cls = meta_class
+            obj = obj[-1]
+            if not obj.init:
+                raise Undeclared(Identifier(), ast.obj.name)
+            obj_type = obj.type
+            if type(obj_type) is ClassType:
+                cls = self.meta_program.get_class(obj_type.classname.name)
             else:
-                obj = obj[-1]
-                if not obj.init:
-                    raise Undeclared(Identifier(), ast.obj.name)
-                obj_type = obj.type
-                if type(obj_type) is ClassType:
-                    cls = self.meta_program.get_class(obj_type.classname.name)
-                else:
-                    cls = self.meta_program.get_class(obj.name)
+                cls = self.meta_program.get_class(obj.name)
         attr = cls.get_or_raise_undeclared_attr(ast.fieldname.name)
         return attr.type
 
@@ -695,6 +713,9 @@ class StaticChecker:
 
     def visitBooleanLiteral(self, ast, c):
         return BoolType()
+
+    def visitSelfLiteral(self, ast, c):
+        return ClassType(Id(c[0].name))
 
     def visitNullLiteral(self, ast, c):
         return NoneType()
