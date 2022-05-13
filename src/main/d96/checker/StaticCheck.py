@@ -411,10 +411,13 @@ class StaticChecker:
         if not lhs:
             raise Undeclared(Identifier(), ast.lhs.name)
         if type(ast.lhs) is FieldAccess:
-            obj = meta_method.get_or_raise_undeclared_variable(
-                ast.lhs.obj.name
-            )[-1]
-            cls = self.meta_program.get_class(obj.type.classname.name)
+            if type(ast.lhs.obj) is SelfLiteral:
+                cls = meta_class
+            else:
+                obj = meta_method.get_or_raise_undeclared_variable(
+                    ast.lhs.obj.name
+                )[-1]
+                cls = self.meta_program.get_class(obj.type.classname.name)
             cls.get_or_raise_undeclared_attr(ast.lhs.fieldname.name)
             partype = type(lhs)
         else:
@@ -422,12 +425,21 @@ class StaticChecker:
                 lhs = lhs[-1]
             if type(lhs) is MetaVariable and lhs.constant:
                 raise CannotAssignToConstant(ast)
+            if type(lhs) is ArrayType:
+                obj = meta_method.get_or_raise_undeclared_variable(ast.lhs.arr.name)[-1]
+                if obj.constant:
+                    raise CannotAssignToConstant(ast)
             if type(ast.lhs) is ArrayCell:
                 partype = type(lhs)
             else:
                 partype = type(lhs.type)
 
-        rettype = type(rhs)
+        # Dirty
+        if type(rhs) is list:
+            rhs = rhs[-1]
+            rettype = type(rhs.type)
+        else:
+            rettype = type(rhs)
         if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInStatement(ast)
 
@@ -626,15 +638,19 @@ class StaticChecker:
         return ArrayType(len(partype), partype_set.pop())
 
     def visitArrayCell(self, ast, c: tuple):
+        meta_class, meta_method = c
         arr = self.visit(ast.arr, c)[0]
         if type(arr.type) is not ArrayType:
             raise TypeMismatchInExpression(ast)
 
         # Index syntax: [1][1]
         idxtype = [self.visit(x, c) for x in ast.idx]
+
         for idx in idxtype:
             if type(idx) is not IntType:
                 raise TypeMismatchInExpression(ast)
+
+        # TODO no out of bound checks
 
         return arr.type.eleType
 
