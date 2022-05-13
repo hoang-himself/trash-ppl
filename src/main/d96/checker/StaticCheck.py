@@ -398,7 +398,7 @@ class StaticChecker:
         partype = type(ast.constType)
         rettype = type(ret)
         if partype is ClassType:
-            self.meta_program.get_class(ast.varType.classname.name)
+            self.meta_program.get_class(ast.constType.classname.name)
         if rettype not in self.COERCE_TYPE[partype]:
             raise TypeMismatchInConstant(ast)
         meta_method.add_const(ast.constant.name, ast.constType, True)
@@ -469,13 +469,18 @@ class StaticChecker:
             raise TypeMismatchInStatement(ast)
 
     def visitCallExpr(self, ast, c: tuple):
-        cls = self.meta_program.get_class(ast.obj.name)
+        meta_class, meta_method = c
+        obj = self.visit(ast.obj, c)[-1]
+        cls = self.meta_program.get_class(obj.type.classname.name)
         method = cls.get_or_raise_undeclared_method(ast.method.name)
         partype = [self.visit(x, c) for x in ast.param]
 
         # Expression must return type
-        if not method.rettype or method.partype != partype:
+        if not method.rettype:
             raise TypeMismatchInExpression(ast)
+        for x, y in zip(method.partype, partype):
+            if type(y) not in self.COERCE_TYPE[type(x.varType)]:
+                raise TypeMismatchInExpression(ast)
 
         return method.rettype
 
@@ -549,49 +554,63 @@ class StaticChecker:
         if type(ast.obj) is SelfLiteral:
             cls = meta_class
         else:
-            obj = self.visit(ast.obj, c)[-1]
-            if not obj.init:
-                raise Undeclared(Identifier(), ast.obj.name)
-            obj_type = obj.type
-            if type(obj_type) is ClassType:
-                cls = self.meta_program.get_class(obj_type.classname.name)
+            obj = self.visit(ast.obj, c)
+            if type(obj) is ClassType:
+                cls = meta_class
             else:
-                cls = self.meta_program.get_class(obj.name)
+                obj = obj[-1]
+                if not obj.init:
+                    raise Undeclared(Identifier(), ast.obj.name)
+                obj_type = obj.type
+                if type(obj_type) is ClassType:
+                    cls = self.meta_program.get_class(obj_type.classname.name)
+                else:
+                    cls = self.meta_program.get_class(obj.name)
         attr = cls.get_or_raise_undeclared_attr(ast.fieldname.name)
         return attr.type
 
     def visitBinaryOp(self, ast, c: BinaryOp):
         left = self.visit(ast.left, c)
         right = self.visit(ast.right, c)
+        if type(left) is list:
+            left = left[-1]
+            left_type = type(left.type)
+        else:
+            left_type = type(left)
+        if type(right) is list:
+            right = right[-1]
+            right_type = type(right.type)
+        else:
+            right_type = type(right)
         op = ast.op
 
         # Arithmetic
         if op == '%':
-            if not (type(left) is IntType and type(right) is IntType):
+            if not (left_type is IntType and right_type is IntType):
                 raise TypeMismatchInExpression(ast)
         if op in ['+', '-', '*', '/']:
             if not (
-                type(left) in [IntType, FloatType] and
-                type(right) in [IntType, FloatType]
+                left_type in [IntType, FloatType] and
+                right_type in [IntType, FloatType]
             ):
                 raise TypeMismatchInExpression(ast)
-            if type(left) is IntType and type(right) is IntType:
+            if left_type is IntType and right_type is IntType:
                 return IntType()
             return FloatType()
 
         # Boolean
         if op == '==.':
-            if not (type(left) is StringType and type(right) is StringType):
+            if not (left_type is StringType and right_type is StringType):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['&&', '||']:
-            if not (type(left) is BoolType and type(right) is BoolType):
+            if not (left_type is BoolType and right_type is BoolType):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
 
         # String
         if op == '+.':
-            if not (type(left) is StringType and type(right) is StringType):
+            if not (left_type is StringType and right_type is StringType):
                 raise TypeMismatchInExpression(ast)
             return StringType()
 
@@ -599,14 +618,14 @@ class StaticChecker:
         if op in ['==', '!=']:
             # http://e-learning.hcmut.edu.vn/mod/forum/discuss.php?d=158243#p490396
             if not (
-                type(left) is type(right) and type(left) in [IntType, BoolType]
+                left_type is right_type and left_type in [IntType, BoolType]
             ):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
         if op in ['<', '>', '<=', '>=']:
             if not (
-                type(left) in [IntType, FloatType] and
-                type(right) in [IntType, FloatType]
+                left_type in [IntType, FloatType] and
+                right_type in [IntType, FloatType]
             ):
                 raise TypeMismatchInExpression(ast)
             return BoolType()
@@ -644,13 +663,24 @@ class StaticChecker:
             raise TypeMismatchInExpression(ast)
 
         # Index syntax: [1][1]
-        idxtype = [self.visit(x, c) for x in ast.idx]
+        idx_type = [self.visit(x, c) for x in ast.idx]
 
-        for idx in idxtype:
+        for idx in idx_type:
             if type(idx) is not IntType:
                 raise TypeMismatchInExpression(ast)
 
-        # TODO no out of bound checks
+        obj = meta_method.get_or_raise_undeclared_variable(ast.arr.name)[-1]
+        idx_size = list(map(lambda x: x.value, ast.idx))
+        obj_size = list()
+        _obj = obj.type
+        while True:
+            if type(_obj) is not ArrayType:
+                break
+            obj_size += [_obj.size]
+            _obj = _obj.eleType
+        for x, y in zip(idx_size, obj_size):
+            if x < 0 or x >= y:
+                raise TypeMismatchInExpression(ast)
 
         return arr.type.eleType
 
