@@ -675,47 +675,36 @@ class CheckerSuite(unittest.TestCase):
         expect = "Type Mismatch In Expression: CallExpr(Id(a),Id(d),[IntLit(1),IntLit(2)])"
         self.assertTrue(TestChecker.test(input, expect, 435))
 
-    # def test_436(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class B{
-    #             Var b: Int = 1;
-    #             c(g: Int; h:Float){
-    #                 Return 1;
-    #             }
-    #             d(x: Int; y:Float; z:String){}
-    #         }
-    #         Class C{
-    #             e(){
-    #                 Val a:B = New B();
-    #                 Val d:Float = a.c(1,2);
-    #                 a.d(1,2,"a");
-    #                 a.d(1,2,3);
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: Call(Id(a),Id(d),[IntLit(1),IntLit(2),IntLit(3)])"
-    #     self.assertTrue(TestChecker.test(input, expect, 436))
+    def test_436(self):
+        input = """
+            Class Program { main() {} }
+            Class B{
+                Var b: Int = 1;
+                c(g: Int; h:Float){
+                    Return 1;
+                }
+                d(x: Int; y:Float; z:String){}
+            }
+            Class C{
+                e(){
+                    Val a:B = New B();
+                    Val d:Float = a.c(1,2);
+                    a.d(1,2,"a");
+                    a.d(1,2,3);
+                }
+            }"""
+        expect = "Type Mismatch In Statement: Call(Id(a),Id(d),[IntLit(1),IntLit(2),IntLit(3)])"
+        self.assertTrue(TestChecker.test(input, expect, 436))
 
-    # def test_437(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class B{
-    #             Var b: Int = 1;
-    #             c(g: Int; h:Float){
-    #                 Return 1;
-    #             }
-    #             d(x: Int; y:Float; z:String){}
-    #         }
-    #         Class C{
-    #             e(){
-    #                 Val a:B = New B();
-    #                 Val d:Float = a.c(1,2);
-    #                 a.d(1+2,2--2.0,"a"+."bcd");
-    #                 a.c(1,2);
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: Call(Id(a),Id(c),[IntLit(1),IntLit(2)])"
-    #     self.assertTrue(TestChecker.test(input, expect, 437))
+    def test_437(self):
+        input = """
+        Class Program {
+            mainN() {
+                Var a: Boolean = !True;
+            }
+        }"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 437))
 
     def test_438(self):
         input = """
@@ -975,143 +964,96 @@ class CheckerSuite(unittest.TestCase):
 
     # def test_453(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class B{
-    #             func(){
-    #                 count.foo();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Identifier: count"
+    #     Class Program {
+    #         foo() {
+    #             Return 1;
+    #         }
+    #         main() {
+    #             Var a:Int = Self.foo(1);
+    #         }
+    #     }"""
+    #     expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
     #     self.assertTrue(TestChecker.test(input, expect, 453))
 
-    # def test_454(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             Var $a: Int = 5;
-    #             Var b: Int = 4;
-    #         }
-    #         Class B{
-    #             func(){
-    #                 Var b: Int = A::$a;
-    #                 b = count.foo();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Identifier: count"
-    #     self.assertTrue(TestChecker.test(input, expect, 454))
+    def test_454(self):
+        input = """
+        Class Program {
+            mainN() {
+                Var a: Boolean = True || False;
+            }
+        }"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 454))
 
-    # def test_455(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             Var $a: Int = 5;
-    #             Var b: Int = 4;
-    #         }
-    #         Class B{
-    #             func(){
-    #                 Var b: Int = A::$a;
-    #                 b = A.b;
-    #             }
-    #         }"""
-    #     expect = "Illegal Member Access: FieldAccess(Id(A),Id(b))"
-    #     self.assertTrue(TestChecker.test(input, expect, 455))
+    def test_455(self):
+        input = """
+        Class E {
+            func() {}
+        }
+
+        Class Program{
+            test() {
+                Var e: E = New E();
+                Return e.func;
+            }
+
+            main() {}
+        }"""
+        expect = "Undeclared Attribute: func"
+        self.assertTrue(TestChecker.test(input, expect, 455))
 
     # def test_456(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             Var $a: Int = 5;
-    #             Var b: Int = 4;
+    #     Class Program {
+    #         main() {
+    #             Var arr: Array[Array[Int,2], 3];
+    #             Var a: String = arr[1][2];
     #         }
-    #         Class B{
-    #             func(){
-    #                 Var b:A;
-    #                 Var c: Int = b.b;
-    #                 Var d: Int = b::$a;
-    #             }
-    #         }"""
-    #     expect = "Undeclared Class: b"
+    #     }"""
+    #     expect = "Type Mismatch In Statement: VarDecl(Id(a),StringType,ArrayCell(Id(arr),[IntLit(1),IntLit(2)]))"
     #     self.assertTrue(TestChecker.test(input, expect, 456))
 
-    # def test_457(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             $a(){}
-    #             b(){}
-    #         }
-    #         Class B{
-    #             func(){
-    #                 A::$a();
-    #                 Var b:A = New A();
-    #                 b.b();
-    #                 b::$a();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Class: b"
-    #     self.assertTrue(TestChecker.test(input, expect, 457))
+    def test_457(self):
+        input = """
+        Class Program {
+            main() {
+                Var arr: Array[Array[Int,2], 3];
+                Var a: Int = arr[1];
+            }
+        }"""
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),IntType,ArrayCell(Id(arr),[IntLit(1)]))"
+        self.assertTrue(TestChecker.test(input, expect, 457))
 
-    # def test_458(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             $a(){}
-    #             b(){}
-    #         }
-    #         Class B{
-    #             func(){
-    #                 A::$a();
-    #                 Var b:A = New A();
-    #                 b.b();
-    #                 A.b();
-    #             }
-    #         }"""
-    #     expect = "Illegal Member Access: Call(Id(A),Id(b),[])"
-    #     self.assertTrue(TestChecker.test(input, expect, 458))
+    def test_458(self):
+        input = """
+        Class Program {
+            main() {
+                Var arr: Array[Int,2] = Array(1, 2);
+                Var a: String = arr[1];
+            }
+        }"""
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),StringType,ArrayCell(Id(arr),[IntLit(1)]))"
+        self.assertTrue(TestChecker.test(input, expect, 458))
 
-    # def test_459(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             $a(){
-    #                 Return 1;
-    #             }
-    #             b(){
-    #                 Return 1;
-    #             }
-    #         }
-    #         Class B{
-    #             func(){
-    #                 Var b:A = New A();
-    #                 Var c: Int = A::$a();
-    #                 c = b.b();
-    #                 c = A.b();
-    #             }
-    #         }"""
-    #     expect = "Illegal Member Access: CallExpr(Id(A),Id(b),[])"
-    #     self.assertTrue(TestChecker.test(input, expect, 459))
+    def test_459(self):
+        input = """
+        Class Program {
+            main() {
+                Var arr: Array[Int,2] = Array(1, 2, 3);
+            }
+        }"""
+        expect = "Type Mismatch In Statement: VarDecl(Id(arr),ArrayType(2,IntType),[IntLit(1),IntLit(2),IntLit(3)])"
+        self.assertTrue(TestChecker.test(input, expect, 459))
 
-    # def test_460(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             $a(){
-    #                 Return 1;
-    #             }
-    #             b(){
-    #                 Return 1;
-    #             }
-    #         }
-    #         Class B{
-    #             func(){
-    #                 Var b:A = New A();
-    #                 Var c: Int = A::$a();
-    #                 c = b.b();
-    #                 c = b::$a();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Class: b"
-    #     self.assertTrue(TestChecker.test(input, expect, 460))
+    def test_460(self):
+        input = """
+        Class Program {
+            main() {
+                Return 1;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: Return(IntLit(1))"
+        self.assertTrue(TestChecker.test(input, expect, 460))
 
     def test_461(self):
         input = """
@@ -1193,17 +1135,15 @@ class CheckerSuite(unittest.TestCase):
 
     # def test_467(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class A{
-    #             Val y: Int=10;
-    #         }
-    #         Class B{
-    #             Var x:A;
-    #             func (){
-    #                 Val z: Int=Self.x.y;
+    #     Class O {
+    #         Var $a: String = "1";
+    #     }
+    #     Class Program {
+    #             main() {
+    #                 Var b: Int = O.a;
     #             }
-    #         } """
-    #     expect = "Illegal Constant Expression: FieldAccess(FieldAccess(Self(),Id(x)),Id(y))"
+    #         }"""
+    #     expect = "Illegal Member Access: FieldAccess(Id(O),Id(a))"
     #     self.assertTrue(TestChecker.test(input, expect, 467))
 
     def test_468(self):
@@ -1269,53 +1209,36 @@ class CheckerSuite(unittest.TestCase):
         expect = "Type Mismatch In Expression: NewExpr(Id(E),[])"
         self.assertTrue(TestChecker.test(input, expect, 471))
 
-    # def test_472(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class E {
-    #             func() {}
-    #             Constructor(a: Int){}
-    #         }
-    #         Class Test{
-    #             Var e: E = New E(1);
-    #             Val b: String = New E(1);
-    #         }"""
-    #     expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(b),StringType,NewExpr(Id(E),[IntLit(1)]))"
-    #     self.assertTrue(TestChecker.test(input, expect, 472))
+    def test_472(self):
+        input = """
+        Class O {}
+        Class Program {
+                main() {
+                    Var a: O = New O(1);
+                }
+            }"""
+        expect = "Type Mismatch In Expression: NewExpr(Id(O),[IntLit(1)])"
+        self.assertTrue(TestChecker.test(input, expect, 472))
 
-    # def test_473(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class E {
-    #             $func() {}
-    #             Constructor(a: Int){}
-    #         }
-    #         Class Test{
-    #             cak(){
-    #                 E::$func();
-    #                 E::$foo();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Method: $foo"
-    #     self.assertTrue(TestChecker.test(input, expect, 473))
+    def test_473(self):
+        input = """
+        Class Program {
+            mainN() {
+                Var a: Boolean = 1 == 2;
+            }
+        }"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 473))
 
-    # def test_474(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class E {
-    #             $func() {
-    #                 Return 1;
-    #             }
-    #             Constructor(a: Int){}
-    #         }
-    #         Class Test{
-    #             cak(){
-    #                 Var a: Int = E::$func();
-    #                 Var b: Int = E::$foo();
-    #             }
-    #         }"""
-    #     expect = "Undeclared Method: $foo"
-    #     self.assertTrue(TestChecker.test(input, expect, 474))
+    def test_474(self):
+        input = """
+        Class Program {
+            mainN() {
+                Var a: Boolean = "True" ==. "True";
+            }
+        }"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input, expect, 474))
 
     def test_475(self):
         input = """
@@ -1449,127 +1372,95 @@ class CheckerSuite(unittest.TestCase):
 
     # def test_482(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             Var a: Int = 1;
-    #             fooExp(x:Float; y:String){
-    #                 Return 1;
-    #             }
-    #             fooCall(x:Float; y:String){}
+    #     Class Program {
+    #         foo() {
+    #             Return 1;
     #         }
-    #         Class B{
-    #             Var b:A = New A();
-    #             foo(){
-    #                 Return New A();
-    #             }
-    #             foo2(){
-    #                 Self.g().fooCall(1, "a");
-    #             }
-    #         }"""
-    #     expect = "Undeclared Method: g"
+    #         main() {
+    #             Var a:Int = Self.foo(1);
+    #         }
+    #     }"""
+    #     expect = "Type Mismatch In Expression: CallExpr(Self(),Id(foo),[IntLit(1)])"
     #     self.assertTrue(TestChecker.test(input, expect, 482))
 
     # def test_483(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             Var a: Int = 1;
-    #             $fooExp1(x:Float; y:String){
-    #                 Return 1;
-    #             }
-    #             $fooExp2(x:Float; y:String){
-    #                 Return x;
-    #             }
-    #             $fooExp3(x:Float; y:String){
-    #                 Return y;
-    #             }
+    #     Class Program {
+    #         main() {
+    #             Var a: Array[Array[Int, 2], 2] = Array(Array(1, 2), Array("1", "2"));
     #         }
-    #         Class B{
-    #             foo2(){
-    #                 Var e:Float = (New A()).a;
-    #                 e = A::$fooExp1(1, "a");
-    #                 e = A::$fooExp2(1, "a");
-    #                 Var f:String = A::$fooExp3(1, "a");
-    #                 Var g:Float = A::$fooExp3(1, "a");
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: VarDecl(Id(g),FloatType,CallExpr(Id(A),Id($fooExp3),[IntLit(1),StringLit(a)]))"
+    #     }"""
+    #     expect = "Illegal Array Literal: [[IntLit(1),IntLit(2)],[StringLit(1),StringLit(2)]]"
     #     self.assertTrue(TestChecker.test(input, expect, 483))
 
-    # def test_484(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             Var a: Int = 1;
-    #             $fooExp1(x:Float; y:String){
-    #                 Return 1;
-    #             }
-    #             $fooExp2(x:Float; y:String){
-    #                 Return x;
-    #             }
-    #             $fooExp3(x:Float; y:String){
-    #                 Return y;
-    #             }
-    #         }
-    #         Class BB{
-    #             foo2(){
-    #                 Var z: A = New A();
-    #                 Var e:Float = z.a - 7;
-    #                 e = A::$fooExp1(1, "a") +2 - -----5;
-    #                 e = A::$fooExp2(1, "a") + 1;
-    #                 Var f:String = A::$fooExp3(1, "a") +. "abc";
-    #                 Var g:String = A::$fooExp3(1, "a") + 1;
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Expression: BinaryOp(+,CallExpr(Id(A),Id($fooExp3),[IntLit(1),StringLit(a)]),IntLit(1))"
-    #     self.assertTrue(TestChecker.test(input, expect, 484))
+    def test_484(self):
+        input = """
+        Class Program {
+            main() {
+                Var a: Array[Int, 2] = Array(1, "2");
+            }
+        }"""
+        expect = "Illegal Array Literal: [IntLit(1),StringLit(2)]"
+        self.assertTrue(TestChecker.test(input, expect, 484))
 
     # def test_485(self):
     #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             $fooExp1(x:Float; y:String){
-    #                 Var a:Array[Int, 2] = Array(1,1);
-    #                 a = Array(1,1,1);
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: AssignStmt(Id(a),[IntLit(1),IntLit(1),IntLit(1)])"
+    #     Class O {
+    #         $foo() {}
+    #     }
+    #     Class Program {
+    #         foo() {}
+    #         main() {
+    #             Var a: Int = O::$foo();
+    #         }
+    #     }"""
+    #     expect = "Type Mismatch In Expression: CallExpr(Id(O),Id($foo),[])"
     #     self.assertTrue(TestChecker.test(input, expect, 485))
 
-    # def test_486(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             $fooExp1(x:Float; y:String){
-    #                 Var a:Array[Int, 2] = Array(1,1);
-    #                 a = Array("a", "b");
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: AssignStmt(Id(a),[StringLit(a),StringLit(b)])"
-    #     self.assertTrue(TestChecker.test(input, expect, 486))
+    def test_486(self):
+        input = """
+        Class Program {
+            main() {
+                Var i : Int;
+                Foreach (i In 1 .. 100 By 2) {
+                    Break;
+                    Continue;
+                    Var a: String = i;
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),StringType,Id(i))"
+        self.assertTrue(TestChecker.test(input, expect, 486))
 
-    # def test_487(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             $fooExp1(x:Float; y:String){
-    #                 Var b: Array[Array[Int, 2],2] = Array(Array(1,1),Array(1));
-    #             }
-    #         }"""
-    #     expect = "Illegal Array Literal: [[IntLit(1),IntLit(1)],[IntLit(1)]]"
-    #     self.assertTrue(TestChecker.test(input, expect, 487))
+    def test_487(self):
+        input = """
+        Class Program {
+            main() {
+                Var i : Int;
+                Var a: String = "1";
+                Foreach (i In 1 .. 100 By 2) {
+                    Break;
+                    Continue;
+                    a = a + i;
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Expression: BinaryOp(+,Id(a),Id(i))"
+        self.assertTrue(TestChecker.test(input, expect, 487))
 
-    # def test_488(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             $fooExp1(x:Float; y:String){
-    #                 Var a: Array[Array[Int, 2],2] = Array(Array(1,1),Array(1,1));
-    #                 Var b: Array[Array[Int, 2],2] = Array(Array("a","a"),Array("a","abc"));
-    #             }
-    #         }"""
-    #     expect = "Type Mismatch In Statement: VarDecl(Id(b),ArrayType(2,ArrayType(2,IntType)),[[StringLit(a),StringLit(a)],[StringLit(a),StringLit(abc)]])"
-    #     self.assertTrue(TestChecker.test(input, expect, 488))
+    def test_488(self):
+        input = """
+        Class Program {
+            main() {
+                Var i : Int;
+                Var a: String = "1";
+                Foreach (i In 1 .. 100 By 2) {
+                    a = a + i;
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Expression: BinaryOp(+,Id(a),Id(i))"
+        self.assertTrue(TestChecker.test(input, expect, 488))
 
     def test_489(self):
         input = """
@@ -1620,24 +1511,24 @@ class CheckerSuite(unittest.TestCase):
         expect = "Type Mismatch In Statement: AssignStmt(FieldAccess(Self(),Id(a)),StringLit(abc))"
         self.assertTrue(TestChecker.test(input, expect, 492))
 
-    # def test_493(self):
-    #     input = """
-    #         Class Program { main() {} }
-    #         Class A {
-    #             Var myArray: Array[Array[Array[Int,4],2],2] = Array(
-    #                 Array(
-    #                     Array(1,2,3,4),
-    #                     Array(5,6,7,8)
-    #                 ),
-    #                 Array(
-    #                     Array(-1,-2,-3,-4),
-    #                     Array(-5,-6,-7, False)
-    #                 )
-    #             );
-    #         }
-    #     """
-    #     expect = "Illegal Array Literal: [[[IntLit(1),IntLit(2),IntLit(3),IntLit(4)],[IntLit(5),IntLit(6),IntLit(7),IntLit(8)]],[[UnaryOp(-,IntLit(1)),UnaryOp(-,IntLit(2)),UnaryOp(-,IntLit(3)),UnaryOp(-,IntLit(4))],[UnaryOp(-,IntLit(5)),UnaryOp(-,IntLit(6)),UnaryOp(-,IntLit(7)),BooleanLit(False)]]]"
-    #     self.assertTrue(TestChecker.test(input, expect, 493))
+    def test_493(self):
+        input = """
+            Class Program { main() {} }
+            Class A {
+                Var myArray: Array[Array[Array[Int,4],2],2] = Array(
+                    Array(
+                        Array(1,2,3,4),
+                        Array(5,6,7,8)
+                    ),
+                    Array(
+                        Array(1,2,3,4),
+                        Array(5,6,7,False)
+                    )
+                );
+            }
+        """
+        expect = "Illegal Array Literal: [IntLit(5),IntLit(6),IntLit(7),BooleanLit(False)]"
+        self.assertTrue(TestChecker.test(input, expect, 493))
 
     def test_494(self):
         input = """

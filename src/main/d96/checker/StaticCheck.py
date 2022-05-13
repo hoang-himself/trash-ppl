@@ -425,7 +425,9 @@ class StaticChecker:
             if type(lhs) is MetaVariable and lhs.constant:
                 raise CannotAssignToConstant(ast)
             if type(lhs) is ArrayType:
-                obj = meta_method.get_or_raise_undeclared_variable(ast.lhs.arr.name)[-1]
+                obj = meta_method.get_or_raise_undeclared_variable(
+                    ast.lhs.arr.name
+                )[-1]
                 if obj.constant:
                     raise CannotAssignToConstant(ast)
             if type(ast.lhs) is ArrayCell:
@@ -465,8 +467,9 @@ class StaticChecker:
 
         # We don't care about rettype of statements
         # Else it would be expressions
-        if method.partype != partype:
-            raise TypeMismatchInStatement(ast)
+        for x, y in zip(method.partype, partype):
+            if type(y) not in self.COERCE_TYPE[type(x.varType)]:
+                raise TypeMismatchInStatement(ast)
 
     def visitCallExpr(self, ast, c: tuple):
         meta_class, meta_method = c
@@ -507,7 +510,7 @@ class StaticChecker:
                 self.visit(ast.elseStmt, c)
             else:
                 if isinstance(ast.elseStmt, (For, Break, Continue)):
-                    self.visit(ast.elseStmt,  c)
+                    self.visit(ast.elseStmt, c)
                 else:
                     self.visit(ast.elseStmt, meta_class)
 
