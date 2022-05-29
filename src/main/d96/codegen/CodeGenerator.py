@@ -12,6 +12,11 @@ from Emitter import Emitter
 from Frame import Frame
 from abc import ABC, abstractmethod
 
+# !!! COMMENT THIS OUT
+from main.d96.utils.Utils import *
+from main.d96.checker.StaticCheck import *
+from main.d96.checker.StaticError import *
+
 
 class CodeGenerator(Utils):
     def __init__(self):

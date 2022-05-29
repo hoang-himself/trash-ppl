@@ -4,6 +4,11 @@ from StaticError import *
 import CodeGenerator as cgen
 from MachineCode import JasminCode
 
+# !!! COMMENT THIS OUT
+from main.d96.utils.Utils import *
+from main.d96.checker.StaticCheck import *
+from main.d96.checker.StaticError import *
+
 
 class Emitter():
     def __init__(self, filename):
